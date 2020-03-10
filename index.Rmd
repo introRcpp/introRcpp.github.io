@@ -1,0 +1,75 @@
+---
+title: "Introduction à C++ et Rcpp"
+author: "Hervé Perdry"
+date: '`r Sys.Date()`'
+output:
+ pdf_document:
+    includes:
+      in_header: small_header.tex
+    number_sections: yes
+    pandoc_args: --top-level-division=chapter
+    toc: yes
+lang: fr
+---
+
+
+<style type="text/css">
+h1.title {
+  font-size: 38px;
+}
+h1 { /* Header 1 */
+  font-size: 28px;
+}
+h2 { /* Header 2 */
+    font-size: 22px;
+}
+h3 { /* Header 3 */
+  font-size: 18px;
+}
+code{ /* Code block */
+    font-size: 13px;
+}
+pre { 
+  font-size: 13px;
+}
+
+</style>
+
+```{r global_options, include=FALSE}
+# library("knitr")
+# opts_chunk$set(prompt = TRUE, comment = NA)
+options(width = 92)
+
+# !!!!! pour coller la sortie à l'instruction !!!!! 
+hook1 <- function(x){ gsub("```\n*```r*\n*", "", x) }
+hook2 <- function(x){ gsub("```\n+```\n", "", x) }
+knitr::knit_hooks$set(document = hook2)
+```
+
+
+# À propos de ce document
+
+Ce document est issu d'un cours d'école doctorale donné en février/mars 2019.
+Un effort a été fait pour le rendre lisible sans les commentaires fait en cours,
+mais il y a certainement toujours des lacunes.
+
+Les exemples de code proposés utilisent souvent le standard C++11. Pour
+pouvoir compiler avec ce standard, utilisez `Sys.setenv("PKG_CXXFLAGS" = "-std=c++11")`.
+
+Les comparaisons de temps d'exécution qui apparaissent ici ont été obtenues avec
+une installation de R « standard » (pas de librairie comme openBlas ou autre),
+une compilation avec `clang++`, sur une machine linux disposant de 8 cœurs à 3.60 GHz, avec un cache de 8 MB. Des comparaisons avec d'autres compilateurs ou sur d'autres
+machines peuvent donner des résultats (très) différents, tant en valeur des temps
+d'exécution qu'en comparaison des performances.
+
+L'idéal serait d'amener les lecteurs d'une part à une bonne connaissance des
+possibilités offertes par `Rcpp`, d'autre part au niveau nécessaire pour
+ouvrir `The C++ programming language` de Bjarne Stroustrup -- on recommande,
+avant de se frotter à cet énorme et patibulaire ouvrage de référence (1300 pages),
+le plus court et plus amène `A tour of C++` du même auteur.
+
+`r if(knitr:::pandoc_to() == "html") "Une version pdf de ce document est également <a href = 'intro_cpp.pdf'>disponible ici</a>"`
+
+```{r child=c("01-intro.Rmd", "02-bases.Rmd", "03-manipuler.Rmd", "04-Metropolis.Rmd")}
+```
+

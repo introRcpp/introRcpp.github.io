@@ -1,0 +1,691 @@
+# Bases de C++ 
+
+Il faut toujours commencer par saluer le monde. Créez un fichier `hello.cpp` contenant le code suivant :
+
+```{Rcpp}
+#include <Rcpp.h>
+#include <iostream>
+//[[Rcpp::export]]
+void hello() {
+  Rcpp::Rcout << "Hello world!\n";
+}
+```
+
+Compilez le depuis R (il faut avoir installé le package Rcpp) :
+```{R eval = FALSE}
+library(Rcpp)
+sourceCpp("hello.cpp")
+```
+(ou, si vous utilisez R Studio, cliquez sur « source »...).
+Appelez ensuite la fonction en R :
+
+```{r prompt = TRUE, comment = NA}
+hello()
+```
+
+Dans le programme C++, les directives d'inclusion `#include` servent à inclure 
+des librairies.
+La librairie `Rcpp.h` permet l'interaction avec les objets de R ; la définition
+de l'objet `Rcpp::Rcout`, un « flux de sortie » (output stream) 
+qui permet l'écriture dans la console R y est incluse.
+La librairie `iostream` contient en particulier la définition de l'opérateur `<<`.
+Elle n'est en fait pas nécessaire ici car `Rcpp.h` contient une directive 
+d'inclusion similaire.
+
+## Nécessité des types 
+
+C++ est un langage compilé et non interprété. Le compilateur est le programme qui
+lit le code C++ et produit un code assembleur puis du langage machine 
+(possiblement en passant par un langage intermédiaire). 
+
+Les instructions de l'assembleur (et du langage machine qui est sa traduction numérique directe)
+manipulent directement les données sous formes de nombre codés en binaire, sur 8, 16, 32 ou 
+64 bits. La manipulation de données complexes (des vecteurs, des chaines de caractères) se
+fait bien sûr en manipulant une suite de tels nombres.
+
+Pour que le compilateur puisse produire de l'assembleur, il faut qu'il sache la façon dont les
+données sont codées dans les variables. La conséquence est que toutes les variables doivent 
+déclarées, et ne pourrons pas changer de type ; de même, le type des valeurs retournées 
+par les fonctions doit être fixé, ainsi que celui de leurs paramètres. 
+
+Les fantaisies permises par R (voir ci-dessous) ne sont plus possibles (étaient-elles souhaitables ?).
+
+```{r}
+fantaisies <- function(a) {
+  if(a == 0) {
+    return(a)
+  } else {
+    return("Non nul")
+  }
+}
+```
+```{r prompt = TRUE, comment = NA}
+fantaisies(0)
+fantaisies(1)
+fantaisies("0")
+fantaisies("00")
+```
+
+La librairie standard de C++ offre une collection de types de données très élaborés
+et de fonctions qui les manipulent. Nous commencerons par les types fondamentaux : entiers,
+flottants, booléens.
+
+## Les entiers
+
+Compilez ce programme qui affiche la taille (en octets) des quatre types d'entiers (signés)
+(le résultat peut théoriquement varier d'une architecture à l'autre, c'est-à-dire
+qu'il n'est pas fixé par la description officielle du C++).
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+//[[Rcpp::export]]
+void int_types() {
+  char a;
+  short b;
+  int c;
+  long int d;
+  Rcout << "sizeof(a) = " << sizeof(a) << "\n";
+  Rcout << "sizeof(b) = " << sizeof(b) << "\n";
+  Rcout << "sizeof(c) = " << sizeof(c) << "\n";
+  Rcout << "sizeof(d) = " << sizeof(d) << "\n";
+}
+```
+
+Notez une nouveauté ci-dessus : la directive `using namespace Rcpp` qui permet de taper
+`Rcout` au lieu de `Rcpp::Rcout`. C'est commode mais à utiliser avec parsimonie (et à
+bon escient) : il n'est en effet pas rare que des fonctions appartenant à des namespace 
+différents portent le même nom. La syntaxe `namespace::fonction` permet d'éviter toute
+ambiguïté.
+
+```{r prompt = TRUE, comment = NA}
+int_types()
+```
+
+Notez le `using namespace Rcpp` qui permet de taper simplement `Rcout` au lieu de
+`Rcpp::Rcout`.
+
+Les entiers de R correspondent au type `int`(sur 32 bits) mais cela ne vous empêche 
+pas de manipuler dans vos fonctions C++ 
+des entiers plus courts ou plus longs si vous en avez besoin.
+
+Il existe aussi des types non signés, par exemple `unsigned int` ou `unsigned char` ;
+et des raccourcis variés, par exemple `size_t` pour `unsigned long int`.
+
+#### Notre première fonction « non void »
+
+Écrivons notre première fonction qui renvoie une valeur. Son type doit être déclaré
+comme ceci :
+
+```{Rcpp}
+//[[Rcpp::export]]
+int somme_entiers(int a, int b) {
+  return a+b;
+}
+```
+
+Et testons la :
+```{r prompt = TRUE, comment = NA}
+somme_entiers(1L, 101L)
+somme_entiers(1.9,3.6)
+```
+
+Que se passe-t-il ? Utilisez la fonction suivante pour comprendre.
+
+```{Rcpp}
+//[[Rcpp::export]]
+int cast_to_int(int x) {
+  return x;
+}
+```
+
+### Initialisation des variables
+
+Il est nécessaire d'initialiser les variables.
+
+```{Rcpp}
+//[[Rcpp::export]]
+int uninit() {
+  int a; // a peut contenir n'importe quoi
+  return a;
+}
+```
+
+Testons :
+```{r prompt = TRUE, comment = NA}
+uninit()
+```
+
+On aura parfois 0, mais pas systématiquement (cela dépend de l'état de la mémoire). 
+On peut initialiser `a` lors de la déclaration : `int a = 0;`
+
+## Les flottants
+
+Il y a trois types de nombres en format flottant. Le type utilisé par R est le `double` de C++.
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+void float_types() {
+  float a;
+  double b;
+  long double c;
+  Rcpp::Rcout << "sizeof(a) = " << sizeof(a) << "\n";
+  Rcpp::Rcout << "sizeof(b) = " << sizeof(b) << "\n";
+  Rcpp::Rcout << "sizeof(c) = " << sizeof(c) << "\n";
+}
+```
+
+### Précision du calcul 
+Parenthèse de culture informatique générale. Voici ce que répond R au test `1.1 - 0.9 = 0.2`.
+
+```{r prompt = TRUE, comment = NA}
+1.1 - 0.9 == 0.2
+```
+
+Pourquoi ? 
+Est-ce que C++ fait mieux ? (Rappel : R utilise des `double`).
+
+Sur les architectures courantes, les nombres au format `double` 
+sont codés sur 64 bits (voir ci-dessus, taille 8 octets). C'est un format
+« à virgule flottante », c'est-à-dire qu'ils sont représentés sous la
+forme $a 2^b$, ou $a$ et $b$ sont bien sûr codés en binaire (sur 53 bits -- dont
+un bit $1$ implicite -- pour $a$, 11 pour $b$, et un bit de signe). Cette 
+précision finie implique des erreurs d'arrondi. Pour plus de détails, voir
+Wikipedia sur la norme IEEE 754 : https://fr.wikipedia.org/wiki/IEEE_754
+
+Quelle est la différence entre les nombres ci-dessus ?
+
+```{r prompt = TRUE, comment = NA}
+(1.1 - 0.9) - 0.2
+```
+
+C'est-à-dire $2^{-54}$ (une erreur au 53e chiffre...).
+Affichons la représentation interne des nombres en question avec la 
+fonction `bits` du package `pryr`.
+```{r prompt = TRUE, comment = NA}
+pryr::bits(1.1 - 0.9)
+pryr::bits(0.2)
+```
+
+### Valeurs spéciales et extrêmes
+
+Il y a des valeurs spéciales en C++ comme en R : une valeur infinie, et une valeur non-définie 
+`NaN`, pour *not a number.* 
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+double divise(double a, double b) {
+  double r = a/b;
+  Rcpp::Rcout << a << " / " << b << " = " << r << std::endl;
+  return r;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+divise(1,2)
+divise(1,0)
+divise(-1,0)
+divise(0,0)
+```
+
+En C++, la fonction `numeric_limits` permet d'obtenir les valeurs
+extrêmes que peuvent prendre les `double`.
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+void numeric_limits() {
+  Rcpp::Rcout 
+    << "plus petite valeur positive 'normale' = " 
+    << std::numeric_limits<double>::min()         << "\n"
+    << "plus petite valeur positive           = " 
+    << std::numeric_limits<double>::denorm_min()  << "\n"
+    << "plus grande valeur                    = " 
+    << std::numeric_limits<double>::max() << "\n"
+    << "epsilon                               = " 
+    << std::numeric_limits<double>::epsilon()     << "\n";
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+numeric_limits()
+```
+
+## Constantes numériques
+
+Attention, si le R considère que `0` ou `1` est un `double` (il faut taper `0L`
+ou `1L` pour avoir un `integer`), pour C++ ces valeurs sont des entiers. Pour
+initialiser proprement un `double` il faut taper `0.` ou `0.0`, etc. La plupart
+du temps le compilateur corrige ces petites erreurs.
+
+## Opérateurs arithmétiques
+
+Les opérateurs arithmétiques sont bien entendu `+`, `-`, `*` et `/`. Pour les entiers,
+le modulo est `%`. 
+
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void division_entiere(int a, int b) {
+  int q = a / b; 
+  int r = a % b;
+  Rcpp::Rcout << a << " = " << b << " * " << q << " + " << r << std::endl;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+division_entiere(128, 7)
+```
+
+À ces opérateurs, il faut ajouter des opérateurs d'assignation composée
+`+=`, `-=`, `*=` et `/=` qui fonctionnent ainsi : `x += 4;` est équivalent
+à `x = x + 4`, et ainsi de suite. Il y a aussi les opérateurs d'incrémentation `++`
+et de décrémentation `--`.
+
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void operateurs_exotiques(int a) {
+  Rcpp::Rcout << "a = " << a << std::endl;
+
+  Rcpp::Rcout << "a *= 2;" << std::endl;
+  a *= 2;
+  Rcpp::Rcout << "a = " << a << std::endl;
+
+  Rcpp::Rcout << "int b = a++;" << std::endl;
+  int b = a++; // post incrementation
+  Rcpp::Rcout << "b = " << b << std::endl;
+  Rcpp::Rcout << "a = " << a << std::endl;
+
+  Rcpp::Rcout << "int c = ++a;" << std::endl;
+  int c = ++a; // pre incrementation
+  Rcpp::Rcout << "c = " << c << std::endl;
+  Rcpp::Rcout << "a = " << a << std::endl;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+operateurs_exotiques(3)
+```
+
+
+## Booléens
+
+Le type `bool` peut prendre les valeurs vrai/faux. Il correspond au type `logical` de R.
+
+```{Rcpp}
+// [[Rcpp::export]]
+bool test_positif(double x) {
+  return (x > 0);
+}
+```
+
+Les opérateurs de test sont comme en R, `>`, `>=`, `<`, `<=`, `==` et `!=`.
+Les opérateurs logiques sont `&&` (et), `||` (ou) et `!` (non). **Attention !**
+Les opérateurs `&` et `|` existent également, ce sont des opérateurs logiques bit à bit
+qui opèrent sur les entiers. 
+
+```{Rcpp}
+// [[Rcpp::export]]
+bool test_interval(double x, double min, double max) {
+  return (min <= x && x <= max);
+}
+```
+
+## Tableaux de taille fixe
+
+On peut définir des tableaux de taille fixe fixe (connue à la compilation) ainsi:
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+//[[Rcpp::export]]
+void petit_tableau() {
+  int a[4] = {0,2,7,11};
+  SHOW(a)    // wut ?
+  SHOW(a[0])
+  SHOW(a[1])
+  SHOW(a[2])
+  SHOW(a[3])
+}
+```
+
+L'occasion est saisie pour montrer l'utilisation d'une macro. La ligne
+`SHOW(a[0])` est remplacée par `Rcpp::Rcout << "a[0]" << " = " << (a[0]) << std::endl;` **avant** la compilation.
+Les macros peuvent rendre de grand services pour la clarté du code ou pour 
+faciliter le débuggage « manuel ». 
+
+L'utilisation de parenthèse autour de `(x)`
+dans la définition de la macro est très conseillée : si on utilisait par exemple
+`SHOW(a == b)` il n'y a aucun problème avec la syntaxe `Rcout << (a == b) << std::endl;`
+mais `Rcout << a == b << std::endl;` pourrait poser des problèmes de priorité des
+opérateurs `==` et `<<`... 
+
+Le résultat de `SHOW(a)` sera expliqué plus tard (pointeurs).
+
+## Contrôle du flux d'exécution : les boucles
+
+### Boucles `for`
+
+Plus de 90\% des boucles `for` s'écrivent ainsi :
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void ze_loop(int n) {
+  for(int i = 0; i < n; i++) {
+    Rcpp::Rcout << "i = " << i << std::endl;
+  }
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+ze_loop(4)
+```
+
+Le premier élément dans la parenthèse (ici, `int i = 0`) est l'initialisation ; 
+il sera exécuté une seule fois, et c'est généralement une déclaration de variable
+(avec une valeur initiale). Le deuxième élément (`i < n`) est la condition à laquelle
+la boucle sera exécutée une nouvelle fois, c'est généralement une condition sur la
+valeur de la variable ; et le dernier élément (`i++`) est exécuté à la fin de 
+chaque tour de boucle, c'est généralement une mise à jour de la valeur de cette
+variable. 
+
+Il est facile par exemple d'aller de 2 en 2 :
+
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void bouclette(int n) {
+  for(int i = 0; i < n; i += 2) {
+    Rcpp::Rcout << "i = " << i << std::endl;
+  }
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+bouclette(6)
+```
+
+Pour revenir sur les types d'entiers : gare au dépassement arithmétique.
+
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void arithmetic_overflow() {
+  int x = 1;
+  for(int i = 0; i < 33; i++) {
+    Rcpp::Rcout << "2^" << i << " = " << (x) << "\n";
+    x = 2*x;
+  }
+}
+```
+
+Essayer avec `unsigned int`, `long int`.
+
+### `continue` et `break`
+
+Une instruction `continue` en cours de boucle fait passer au tour suivant :
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void trois(int n) {
+  for(int i = 0; i < n; i++) {
+    Rcpp::Rcout << i ;
+    if(i%3 == 0) 
+      continue;
+    Rcpp::Rcout << ".";
+  }
+  Rcpp::Rcout << std::endl;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+trois(12)
+```
+
+Quant à `break`, si s'agit bien sûr d'une interruption de la boucle.
+
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void zz(int n, int z) {
+  for(int i = 0; i < n; i++) {
+    Rcpp::Rcout << "A" ;
+    if(i > z) 
+      break;
+  }
+  Rcpp::Rcout << std::endl;
+}
+```
+
+
+```{r prompt = TRUE, comment = NA}
+zz(14, 100)
+zz(14, 5)
+```
+
+
+### Boucles `while` et `do while`
+
+Ces boucles ressemblent fort à ce qui existe en R. Dans un
+cas, le test est fait avant la boucle, dans l'autre il est fait
+après.
+
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void a_rebours_1(int n) {
+  while(n-- > 0) {
+    Rcpp::Rcout << n << " ";
+  }
+  Rcpp::Rcout << std::endl;
+}
+
+// [[Rcpp::export]]
+void a_rebours_2(int n) {
+  do {
+    Rcpp::Rcout << n << " ";
+  } while(n-- > 0);
+  Rcpp::Rcout << std::endl;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+a_rebours_1(3)
+a_rebours_2(3)
+```
+
+On peut aussi utiliser `continue` et `break` dans ces boucles.
+
+
+Considérons un exemple un peu moins artificiel : le calcul d'une racine carrée
+par l'algorithme de Newton. L'avantage de la syntaxe `do while` est apparent
+ici.
+
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+double racine_carree(double x, double eps = 1e-5) {
+  double s = x;
+  do {
+    s = 0.5*(s + x/s);
+  } while( fabs(s*s - x) > eps);
+  return s;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+racine_carree(2)
+racine_carree(2, 1e-8)
+```
+
+Cherchez sur le site `cpprefrence.com` la description des fonctions `abs` et `fabs`. Pourquoi
+ne pouvait-on pas utiliser `abs` ici ? Est-il raisonnable de proposer une valeur trop petite
+pour `eps` ? Proposer une modification de la fonction qui évite cet écueil.
+
+
+## Contrôle du flux d'exécution : les alternatives
+
+### `if` et `if else`
+
+Cela fonctionne tout à fait comme en R ; la x
+
+```{Rcpp}
+// [[Rcpp::export]]
+double mini(double x, double y) {
+  double re = 0;
+  if(x > y) {
+    re = y;
+  } else {
+    re = x;
+  }
+  return re;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+mini(22, 355) 
+```
+
+### `switch`
+
+Un exemple simple devrait permettre de comprendre le fonctionnement de `switch`.
+
+```{Rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+void combien(int n) {
+  switch(n) {
+    case 0:
+      Rcpp::Rcout << "aucun\n";
+      break;
+    case 1:
+      Rcpp::Rcout << "un seul\n";
+      break;
+    case 2:
+      Rcpp::Rcout << "deux\n";
+      break;
+    case 3:
+    case 4:
+    case 5:
+      Rcpp::Rcout << "quelques uns\n";
+      break;
+    default:
+      Rcpp::Rcout << "beaucoup\n";
+  }
+}
+```
+
+## Premiers objets Rcpp : les vecteurs
+
+La librairie `Rcpp` définit des types `NumericVector`, `IntegerVector`
+et `LogicalVector` qui permettent de manipuler en C++ les vecteurs de R.
+
+### Créer des vecteurs, les manipuler
+
+L'initialisation avec la syntaxe utilisée dans `vec0` remplit le vecteur de 0.
+Notez l'accès aux éléments d'un vecteur par l'opérateur `[]`; **contrairement
+à la convention utilisée par R, les vecteurs sont numérotés de 0 à n-1.** 
+
+```{Rcpp}
+#include <Rcpp.h>
+// Création d'un vecteur (initialisé à 0)
+// [[Rcpp::export]]
+Rcpp::NumericVector vec0(int n) {
+  Rcpp::NumericVector x(n);
+  return x;
+}
+
+// accès aux éléments
+// [[Rcpp::export]]
+Rcpp::IntegerVector vec1(int n) {
+  Rcpp::IntegerVector x(n);
+  for(int i = 0; i < n; i++) {
+    x[i] = i*i;
+  }
+  return x;
+}
+```
+
+### Exemple : compter les zéros
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+int count_zeros(Rcpp::IntegerVector x) {
+  int re = 0; 
+  // x.size() et x.length() renvoient la taille de x
+  int n = x.size();
+  for(int i = 0; i < n; i++) {
+    re += (x[i] == 0)?1:0;
+  }
+  return re;
+}
+```
+
+On a utilisé ici l'*opérateur ternaire* `test?a:b`, qui vaut `a` si `test`
+est `true`, `b` sinon. Comment les performances de cette fonction se comparent-elles 
+avec le code R `sum(a == 0)` ?
+
+```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
+set.seed(1); a <- sample(0:99, 1e6, TRUE)
+count_zeros(a);
+sum(a == 0)
+
+mbm <- microbenchmark::microbenchmark( R = sum(a == 0), Cpp = count_zeros(a)) 
+mbm
+ggplot2::autoplot(mbm)
+```
+
+La différence de vitesse d'exécution s'explique en partie par le fait que le
+code R commence par créer un vecteur de type `logical` (le résultat de `a == 0`),
+puis le parcourt pour faire la somme. Ceci implique beaucoup de lectures écritures
+en mémoire, ce qui ralentit l'exécution.
+
+La solution suivante a été proposée en cours.
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+int count_zeros2(Rcpp::IntegerVector x) {
+  int re = 0; 
+  int n = x.size();
+  for(int i = 0; i < n; i++) {
+    (x[i] == 0)?re++:0;
+  }
+  return re;
+}
+```
+
+Mais en fait, comme en R, ajouter un booléen à un int produit une conversion `false` : 0 et `true` : 1.
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+int count_zeros3(Rcpp::IntegerVector x) {
+  int re = 0; 
+  int n = x.size();
+  for(int i = 0; i < n; i++) {
+    re += (x[i] == 0);
+  }
+  return re;
+}
+```
+
+Une comparaison s'impose.
+```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
+count_zeros2(a)
+count_zeros3(a)
+mbm <- microbenchmark::microbenchmark( Cpp1 = count_zeros(a), 
+            Cpp2 = count_zeros2(a), 
+            Cpp3 = count_zeros3(a) )
+mbm
+ggplot2::autoplot(mbm)
+```
+
+Selon les options de compilation ou les architectures, il peut y avoir ou non une différence
+entre ces solutions.
+
+

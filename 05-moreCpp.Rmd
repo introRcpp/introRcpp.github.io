@@ -1,0 +1,569 @@
+# Un peu plus de C++ 
+
+## Pointeurs
+
+Les pointeurs sont un héritage de C. Il s'agit de \og pointer\fg\ vers
+l'adresse d'un objet ou une variable. Un pointeur vers un `int` est un `int *`.
+Si `p` est un pointeur, `*p` est l'objet à l'adresse pointée par `p`.
+
+Pour obtenir le pointeur vers `x`, on utilise `&x`.
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+// [[Rcpp::export]]
+void pointeurs() {
+  int x = 12;   // entier
+  int * p;      // pointeur vers un entier (non initialisé !!)
+  p = &x;       // p pointe vers x
+  SHOW(x);
+  SHOW(p);
+  SHOW(*p);
+  Rcpp::Rcout << "On ajoute 1 à x\n";
+  x += 1;
+  SHOW(x);
+  SHOW(p);
+  Rcpp::Rcout << "On ajoute 1 à *p\n";
+  *p += 1;
+  SHOW(x);
+  SHOW(p);
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+pointeurs()
+```
+
+Nous avions déjà rencontré des pointeurs sans le savoir : les tableaux
+sont des pointeurs ! Plus précisément, si on a déclaré `int a[4]`,
+`a` pointe vers le premier élément du tableau, `a+1` vers le second, etc.
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+// [[Rcpp::export]]
+void tableaux() {
+  int a[4] = {10,20,30,40};
+  SHOW(a);
+  SHOW(a[0]);
+  SHOW(*a);
+  SHOW(a[2]);
+  SHOW(a+2);
+  SHOW(*a+2);
+  SHOW(*(a+2));
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+tableaux()
+```
+
+Notez la différence entre `a` et `a+2` : la taille des `int` est prise en compte 
+dans le calcul.
+
+En passant à une fonction un pointeur vers une variable, 
+d'une part on permet la modification de cette variable, d'autre part on 
+évite la copie de cette variable (intéressant quand on passe des
+objets de grande taille).
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+
+// les arguments sont des pointeurs vers des entiers
+inline void swap(int * x, int * y) {
+  int tmp = *x;
+  *x = *y;
+  *y = tmp;
+}
+
+// [[Rcpp::export]]
+void demonstrate_swap(int a, int b) {
+  if(a > b) swap(&a,&b); // &a = pointeur vers a ...
+  SHOW(a);
+  SHOW(b);
+}
+```
+
+Attention, la fonction `swap` ne peut pas être exportée vers R : les objets
+de R ne peuvent être transformés en `int *`, en pointeurs vers des entiers.
+Elle est destinée à n'être utilisée que dans notre code C++.
+
+Le mot clef `inline` ci-dessus indique au compilateur qu'on désire que la
+fonction soit insérée dans le code aux endroit où elle est utilisée. Cela
+économise un appel de fonction...
+
+```{r prompt = TRUE, comment = NA}
+demonstrate_swap(12, 14)
+demonstrate_swap(14, 12)
+```
+
+## Références
+
+Le mécanisme derrière les références est similaire à celui des pointeurs ; la syntaxe est 
+plus simple et permet d'éviter de 
+promener des étoiles dans tout le code. Une référence à un entier est de type `int &`,
+et peut être manipulée directement comme un `int`. On l'initialise à l'aide d'une 
+autre variable de type `int`.
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+// [[Rcpp::export]]
+void references() {
+  int x = 12;   // entier
+  int & y = x;  // référence à x
+  SHOW(x);
+  SHOW(y);
+  SHOW(&x);
+  SHOW(&y);
+  Rcpp::Rcout << "On ajoute 1 à x\n";
+  x += 1;
+  SHOW(x);
+  SHOW(y);
+  Rcpp::Rcout << "On ajoute 1 à y\n";
+  y += 1;
+  SHOW(x);
+  SHOW(y);
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+references()
+```
+
+C'est surtout utile pour spécifier les arguments d'une fonction.
+Voici ce que devient notre fonction `swap`:
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+
+// les arguments sont des références à des entiers
+inline void swap2(int & x, int & y) {
+  int tmp = x;
+  x = y;
+  y = tmp;
+}
+
+// [[Rcpp::export]]
+void demonstrate_swap2(int a, int b) {
+  if(a > b) swap2(a,b); // on passe directement x et y
+  SHOW(a);
+  SHOW(b);
+}
+```
+
+Cette fonction `swap2` ne peut pas plus être exportée que la 
+fonction `swap` définie plus haut.
+
+```{r prompt = TRUE, comment = NA}
+demonstrate_swap(12, 14)
+demonstrate_swap(14, 12)
+```
+
+### Autres exemples
+
+Un appel `divise_par_deux(x)` est équivalent à `x /= 2`. L'utilisation de
+cette fonction ne
+simplifie pas vraiment le code, mais ce mécanisme pourrait être
+utile pour des opérations plus complexes:
+
+```{Rcpp}
+void divise_par_deux(int & x) {
+  x /= 2;
+}
+
+// [[Rcpp::export]]
+int intlog2(int a) {
+  int k = 0; 
+  while(a != 0) {
+    divise_par_deux(a);
+    k++;
+  }
+  return k-1;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+intlog2(17)
+```
+
+Une autre utilité est de renvoyer plusieurs valeurs. Bien sûr quand
+on utilise `Rcpp` on peut manipuler des vecteurs ou des listes, mais
+utiliser des variables passées par référence pour récupérer les résultats
+d'un calcul est souvent très commode.
+
+```{Rcpp}
+#include <Rcpp.h>
+#include <cmath>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+
+bool eq_quadratique(double a, double b, double c, double & x1, double & x2) {
+  double delta = b*b - 4*a*c;
+  if(delta < 0)
+    return false;
+  double sqrt_delta = std::sqrt(delta);
+  x1 = (-b - sqrt_delta)/(2*a);
+  x2 = (-b + sqrt_delta)/(2*a);
+  return true;
+}
+//[[Rcpp::export]]
+void deuxieme_degre(double a, double b, double c) {
+  double x1, x2;
+  bool solvable = eq_quadratique(a, b, c, x1, x2);
+  if(solvable) {
+    SHOW(x1);
+    SHOW(x2);
+  } else {
+    Rcpp::Rcout << "Pas de solution\n";
+  }
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+deuxieme_degre(1,-5,6)
+deuxieme_degre(1,0,1)
+```
+
+## Les objets de Rcpp sont passés par référence
+
+La fonction suivante le démontre : les vecteurs de Rcpp sont passés par référence 
+(ou sont des pointeurs, comme vous préférez).
+Ceci permet un grand gain de temps, en évitant la copie des données, 
+mais a aussi des effets potentiellement indésirables.
+
+```{Rcpp}
+#include <Rcpp.h>
+// Création d'un vecteur (initialisé à 0)
+// [[Rcpp::export]]
+Rcpp::NumericVector doubler(Rcpp::NumericVector x) {
+  int n = x.size();
+  for(int i = 0; i < n; i++) {
+    x[i] *= 2;
+  }
+  return x;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+x <- seq(0,1,0.1);
+x
+doubler(x)
+x # oups
+```
+
+De plus, quand on copie un objet en R, comme ci-dessous avec `y <- x`, la recopie des données n'a pas lieu dans un premier
+temps. Au début, `y` pointe vers le même objet que `x` ; la recopie n'aura lieu que si on modifier `y`. Quand on utilise
+`Rcpp` ce mécanisme n`est plus actif:
+
+```{r prompt = TRUE, comment = NA}
+x <- seq(0,1,0.1);
+y <- x
+doubler(y)
+x
+y
+```
+
+La prudence est de mise! Notez qu'on a aussi le comportement suivant:
+```{r prompt = TRUE, comment = NA}
+x <- 1:5;
+x
+doubler(x)
+x 
+```
+Utiliser `typeof(x)` pour résoudre cette énigme.
+
+À supposer que ce comportement soit indésirable, comment y remédier ?
+
+```{Rcpp}
+#include <Rcpp.h>
+// Création d'un vecteur (initialisé à 0)
+// [[Rcpp::export]]
+Rcpp::NumericVector doubler2(Rcpp::NumericVector x) {
+  int n = x.size();
+  // contrairement à ce qu'on pense, ceci ne copie pas x
+  Rcpp::NumericVector y = x; 
+  for(int i = 0; i < n; i++) y[i] *= 2;
+  return y;
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector doubler3(Rcpp::NumericVector x) {
+  int n = x.size();
+  // il faut utiliser clone
+  Rcpp::NumericVector y = Rcpp::clone(x);
+  for(int i = 0; i < n; i++) y[i] *= 2;
+  return y;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+x <- seq(0,1,0.1); invisible(doubler2(x)); x
+x <- seq(0,1,0.1); invisible(doubler3(x)); x
+```
+
+## Surcharge
+
+En C++ deux fonctions peuvent avoir le même nom, à condition que le type des
+arguments soit différent, 
+ce qui permet au compilateur de les différentier. À noter : le type retourné
+par la fonction n'est pas pris en compte dans ce mécanisme.
+
+Ceci s'appelle la *surcharge* des fonctions. On a également une surcharge
+des opérateurs (comme `+`, `<<`, etc).
+
+**Attention !** On ne peut pas exporter des fonctions surchargées avec Rcpp.
+Il faut donc maintenir ce mécanisme dans la partie strictement C++ de votre
+code.
+
+Voici un exemple de fonction surchargée.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+double d2(double a, double b) {
+  return (a*a + b*b);
+}
+
+int d2(int a, int b) {
+  return (a*a + b*b);
+}
+
+//[[Rcpp::export]]
+void exemple_d2() {
+  double x = 1.0;
+  double y = 2.4;
+  double z = d2(x, y);
+  Rcout << "d2(x,y) = " << z << std::endl;
+  int u = 1;
+  int v = 4;
+  int w = d2(u, v);
+  Rcout << "d2(u,v) = " << w << std::endl;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+exemple_d2()
+```
+
+On peut également avoir des fonctions qui ont le même nom, et un nombre différent d'arguments.
+
+## Templates
+
+Les templates facilitent la réutilisation de code avec des types différents.
+Prendre le temps d'utiliser des méthodes propres pour éviter les copier-coller 
+dans le code est de toute première importance quand il s'agit de \og maintenir\fg\ le
+code.
+
+### Fonctions polymorphes
+
+L'exemple ci-dessous définit un template `d2` ; lors de la compilation
+de la fonctions `addition_int` et `addition_double` ce template sera instancié
+avec `TYPE = int` puis avec `TYPE = double`.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+template<typename TYPE>
+TYPE d2(TYPE a, TYPE b) {
+  return a*a + b*b;
+}
+
+//[[Rcpp::export]]
+void exemple_template_d2() {
+  double x = 1.0;
+  double y = 2.4;
+  double z = d2(x, y);
+  Rcout << "d2(x,y) = " << z << std::endl;
+  int u = 1;
+  int v = 4;
+  int w = d2(u, v);
+  Rcout << "d2(u,v) = " << w << std::endl;
+}
+```
+
+Exemple:
+
+```{r prompt = TRUE, comment = NA}
+exemple_template_d2()
+```
+
+Si le compilateur peinait à trouver par quoi il faut remplacer `TYPE`, il serait
+possible de préciser en tapant par exemple `d2<float>`. 
+
+On peut donner un autre exemple en faisant un template pour la fonction `swap`
+que nous avions écrite il y a quelques chapitres.
+
+```{Rcpp}
+template<typename TYPE>
+void swap(TYPE & a, TYPE & b) {
+  TYPE tmp = a;
+  a = b;
+  b = tmp;
+}
+```
+
+**Note :** n'utilisez pas ce template dans votre code, 
+C++ a déjà un template `std::swap`, qui est mieux fait que celui-ci ! (Il 
+évite la copie). Voir https://en.cppreference.com/w/cpp/algorithm/swap
+
+### Laisser le compilateur s'occuper des types
+
+Une des utilités des templates est de permettre de ne pas trop
+se soucier de types « compliqués » comme ceux des fonctions. Ci-dessous
+on définit une fonction `num_derive` qui donne une approximation de
+la dérivée de son premier argument.
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+#define epsilon 0.001
+
+template<typename TYPE, typename FTYPE>
+TYPE num_derive(FTYPE f, TYPE a) {
+  return (f(a+epsilon) - f(a-epsilon))/(2.0*epsilon);
+}
+
+double square(double a) {
+  return a*a;
+}
+
+//[[Rcpp::export]]
+void test1(double x) {
+  double fx = square(x);
+  double dfx = num_derive(square, x);
+  SHOW(fx);
+  SHOW(dfx);
+}
+```
+```{r prompt = TRUE, comment = NA}
+test1(3)
+```
+
+On voit que `num_derive` prend deux arguments, une fonction `f` et un point `a`,
+et donne une approximation de $f'(a)$ en calculant
+$$ {f(a+\varepsilon) - f(a-\varepsilon) \over 2\varepsilon} . $$
+
+Quel est le type d'une fonction ?! Nous laissons
+au compilateur le soin de remplacer `FTYPE` par la bonne valeur.
+Dans notre exemple, lors d'instanciation du template, `TYPE` est remplacé par `double`
+et `FTYPE` par `double (*)(double)` (pointeur vers une fonction
+qui renvoie un `double` et dont l'argument est un `double`). Un code équivalent serait
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+#define epsilon 0.001
+double num_derive(double (*f)(double), double a) {
+  return (f(a+epsilon) - f(a-epsilon))/(2*epsilon);
+}
+
+double square(double a) {
+  return a*a;
+}
+
+//[[Rcpp::export]]
+void test_derive(double x) {
+  double fx = square(x);
+  double dfx = num_derive(square, x);
+  SHOW(fx);
+  SHOW(dfx);
+}
+```
+```{r prompt = TRUE, comment = NA}
+test_derive(3)
+```
+
+
+## C++11
+
+Le standard C++11 est maintenant accepté dans les packages R. Pour permettre
+la compilation avec les extensions offertes par C++11, vous devez faire :
+
+```{r prompt = TRUE}
+Sys.setenv("PKG_CXXFLAGS" = "-std=c++11")
+```
+
+### Les boucles sur un vecteur et `auto`
+
+Parmi les extensions offertes, les plus séduisantes sont sans doute : le mot-clef `auto`, 
+qui laisse le compilateur deviner le type, quand le contexte le permet, de façon similaire
+à ce qui est fait dans les templates, et les boucles
+`for` qui parcourent un vecteur... comme en R.
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+int count_zeros3(Rcpp::IntegerVector x) {
+  int re = 0;
+  for(auto a : x) {
+    re += (a == 0)?1:0;
+  }
+  return re;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+set.seed(1); a <- sample(0:99, 1e6, TRUE)
+count_zeros3(a);
+```
+
+Si on veut pouvoir modifier la valeur des éléments du vecteur, il suffit
+d'utiliser une référence :
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+void add_one(Rcpp::IntegerVector x) {
+  for(auto & a : x) {
+    a++;
+  }
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+a <- 1:10
+add_one(a)
+a
+```
+
+**NOTE** En utilisant une référence, on évite la copie. Même si on ne désire pas modifier les éléments
+du vecteur, cela peut modifier énormément les performances de la boucle en question ! 
+
+**TODO  ajouter exemple !!!**
+
+### Nombres spéciaux
+
+C++11 propose aussi des fonctions pour tester si des nombres flottants sont
+finis ou non, sont `NaN`. Il est aussi plus facile de renvoyer un `NaN` ou une
+valeur infinie (c'était possible avec `std::numeric_limits`).
+
+```{Rcpp}
+#include <Rcpp.h>
+#include <cmath>       // !!! CE HEADER EST NÉCESSAIRE
+//[[Rcpp::export]]
+void tests(double x) {
+  if(std::isnan(x)) Rcpp::Rcout << "NaN\n";
+  if(std::isinf(x)) Rcpp::Rcout << "infini\n";
+  if(std::isfinite(x)) Rcpp::Rcout << "fini\n";
+}
+
+//[[Rcpp::export]]
+Rcpp::NumericVector specials() {
+  Rcpp::NumericVector x(2);
+  x[0] = NAN;
+  x[1] = INFINITY;
+  return x;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+tests( NA )
+tests( -Inf )
+tests( pi )
+specials();
+```
+
+

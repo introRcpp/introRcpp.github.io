@@ -1,0 +1,242 @@
+# Exemple : Metropolis-Hastings
+
+## L'algorithme 
+
+```{r echo = FALSE}
+PI <- function(x) (1 + x[1]**2 + x[1]*x[2] + x[2]**2)^(-3)
+MH <- function(B, sd) {
+  R <- matrix(0.0, nrow = B, ncol = 2)
+  x <- R[1,]
+  for(b in 2:B) {
+    y <- x + rnorm(2, 0, sd = sd)
+    rho <- PI(y) / PI(x)
+    u <- runif(1)
+    if(u < rho) 
+      x <- y
+    R[b, ] <- x
+  }
+  return(R);
+}
+set.seed(1)
+```
+
+L'algorithme de Metropolis-Hastings 
+permet de faire des tirages aléatoires dans une loi de densité proportionnelle 
+à une fonction $\pi(x)$ positive -- il n'y a pas besoin que $\int \pi(x) dx = 1$, autrement
+dit, on n'a pas besoin de connaître la constante de normalisation.
+
+Nous présentons tout d'abord la notion de marche aléatoire, puis l'algorithme de 
+Metropolis-Hastings.
+
+### Marche aléatoire
+
+Une suite de valeurs aléatoires $x_1, x_2, \dots \in \mathbb R^d$ est une marche aléatoire\footnote{On pourra 
+trouver d'autres définitions pour \og marche aléatoire\fg. La définition donnée ici est
+celle d'une chaîne de Markov dite \og homogène \fg ou parfois \og stationnaire\fg.} 
+si chaque point $x_{t+1}$ est 
+tiré dans une loi dont la densité ne dépend que $x_t$. On pourra noter $q(x|x_t)$ cette
+densité.
+
+Un exemple simple est la marche aléatoire gaussienne : la densité $q(x | x_t)$ est 
+la densité d'une la loi normale de variance $\sigma^2 I_d$ et d'espérance $x_t$. 
+Cela revient à dire que
+$$ x_{t+1} = x_t + z $$
+avec $z$ tiré dans une loi normale centrée de variance $\sigma^2 I$.
+
+La fonction suivante permet d'illustrer ceci avec $d = 2$. Elle réalise \verb!B!
+étapes d'une marche aléatoire dont le point de départ est $x_1 = (0,0)$. Le résultat
+est présenté sous la forme d'une matrice à \verb!B! lignes et deux colonnes. Le
+paramètre \verb!sd! permet de spécifier la valeur de $\sigma$.
+
+```{r fig = TRUE, fig.width=5, fig.height=4, fig.align='center', cache = TRUE}
+Marche <- function(B, sd) {
+  R <- matrix(0.0, nrow = B, ncol = 2)
+  x <- R[1,]
+  for(b in 2:B) {
+    x <- x + rnorm(2, 0, sd = sd)
+    R[b, ] <- x
+  }
+  return(R);
+}
+X <- Marche(5e4, sd = 0.8)
+plot(X[,1], X[,2], xlab = expression(x[1]), ylab = expression(x[2]), type = "l")
+```
+
+### L'algorithme
+
+Voici l'algorithme pour faire des tirages dans une loi de densité proportionnelle à une fonction 
+positive $\pi(x)$, définie sur $\mathbb R^d$.
+On part d'un point $x_1$ arbitraire, ou bien tiré au hasard dans une loi bien choisie. 
+Supposons qu'on a $x_t \in \mathbb R^d$. On va tirer $x_{t+1}$ en s'aidant d'une marche aléatoire
+de la façon suivante :
+
+1.  On génère une valeur $y$ en faisant "un pas de marche aléatoire depuis $x_t$",
+autrement dit en tirant $y$ dans la loi de densité $q(x|x_t)$.
+
+2. On calcule 
+$$ \rho = { \pi(y) q(x_t | y) \over  \pi(x_t) q(y| x_t) } .$$ 
+
+3. Si $\rho \ge 1$, on pose $x_{t+1} = y$ ; sinon, $x_{t+1} = y$ avec probabilité $\rho$
+et $x_{t+1} = x_t$ avec probabilité $1-\rho$.
+
+La valeur $y$ s'appelle \og valeur proposée\fg ; l'étape 3 consiste à décider si on accepte
+ou non la proposition. En pratique, on peut la réaliser ainsi
+
++ On tire $u$ dans la loi uniforme $U(0,1)$ 
+
++ Si $u < \rho$ on pose $x_{t+1} = y$ (on accepte $y$), et sinon $x_{t+1} = x_t$.
+
+#### Cas particulier d'une marche symétrique 
+si pour tous $x$ et $y$ on a $q(x|y) = q(y|x)$ 
+(la probabilité de faire un pas de $y$ à $x$ est la même que celle de faire un pas de $x$ à $y$ ;
+c'est le cas de la marche gaussienne donnée en exemple), alors on a simplement
+$$\rho = { \pi(y)  \over  \pi(x_t) } . $$
+
+Dans ce cas, la valeur proposée $y$ est toujours acceptée quand $\pi(y) > \pi(x_t)$, 
+c'est-à-dire quand la marche aléatoire propose un point où la densité est plus grande qu'au
+point actuel. 
+
+#### Les propriétés du résultat 
+Si $t$ est assez grand, alors $x_t$ est approximativement de loi de densité $\pi(x)$ 
+(ou proportionnelle à $\pi(x)$). 
+
+On pourrait donc utiliser cette méthode avec $t = 4000$ (par exemple) pour générer
+une valeur dans la loi voulue, puis recommencer, etc. C'est très coûteux en temps de
+calcul ; en fait pour la plupart des applications on peut garder toutes les valeurs
+au-delà d'une certaine valeur de $t$. Elles ne sont pas indépendantes mais cela
+n'est pas très gênant.
+
+L'opération, souvent nécessaire, 
+qui consiste à supprimer les premières valeurs (par exemple les 4000 premières)
+s'appelle le \textit{burn-in}.
+Si il est important que les valeurs échantillonnées soient indépendantes, on peut s'en approcher en ne gardant, 
+par exemple, qu'une valeur toutes les 100 itérations. Cette opération s'appelle le \textit{thinning}.
+
+
+### Application
+
+On prend pour $x = (x_1, x_2)$, 
+$\pi(x) = \bigl(1 + x_1^2 + x_1 x_2 + x_2^2\bigr)^{-3}$, 
+et on utilise une marche aléatoire gaussienne comme celle présentée plus haut,
+qui est une marche symétrique : la formule simplifiée (\ref{rho2}) peut être utilisée.
+On doit obtenir quelque chose de similaire à ceci :
+
+```{r fig= TRUE, fig.width = 15, fig.height = 5, echo  = FALSE, fig.align = "center"}
+X <- MH(5e4, sd = 0.8)
+# var(X)
+# thinning (pour le nuage de points)
+I <- floor(seq(0, nrow(X), length = 500))
+par(mfrow=c(1,2))
+plot(X[I,1], X[I,2], xlab = expression(x[1]), ylab = expression(x[2]))
+# plot.new() # skip a plot 
+hist(X[,1], breaks = 100, xlim= c(-4,4), freq=FALSE, main = "densité marginale de x1")
+# hist(X[,2], breaks = 100, xlim= c(-4,4), freq=FALSE, main = "densité marginale de x2")
+```
+
+## Une version R
+
+```{r prompt = FALSE}
+PI <- function(x) (1 + x[1]**2 + x[1]*x[2] + x[2]**2)^(-3)
+MH <- function(B, sd) {
+  R <- matrix(0.0, nrow = B, ncol = 2)
+  x <- R[1,]
+  for(b in 2:B) {
+    y <- x + rnorm(2, 0, sd = sd)
+    rho <- PI(y) / PI(x)
+    u <- runif(1)
+    if(u < rho)
+      x <- y
+    R[b, ] <- x
+  }
+  return(R);
+}
+```
+
+## Première version en C++
+
+Une version obtenue en « traduisant » l'implémentation en R.
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+double Pi(double x1, double x2) {
+  return pow((1 + x1*x1 + x1*x2 + x2*x2),-3.0);
+}
+//[[Rcpp::export]]
+NumericMatrix MH_cpp(int B, double sd) {
+  NumericMatrix R(B, 2);
+  double x1 = 0.0, x2 = 0.0;
+  for(int b = 1; b < B; b++) {
+    double y1 = x1 + R::rnorm(0,sd);
+    double y2 = x2 + R::rnorm(0,sd);
+    double rho = Pi(y1, y2) / Pi(x1, x2);
+    double u = R::unif_rand();
+    if(u < rho) {
+      x1 = y1;
+      x2 = y2;
+    }
+    R(b,0) = x1;
+    R(b,1) = x2;
+  }
+  return R;
+}
+```
+
+## Comparaisons
+
+TBC
+
+## Une version améliorée
+
+Il est souhaitable d'éviter de recalculer `Pi(x1, x2)` à
+chaque tour de boucle, alors que cette valeur est déjà connue.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+double Pi(double x1, double x2) {
+  return pow((1 + x1*x1 + x1*x2 + x2*x2),-3.0);
+}
+//[[Rcpp::export]]
+NumericMatrix MH_cpp_1(int B, double sd, int burn = 0, int thin = 1) {
+  NumericMatrix R(B, 2);
+  thin = (thin < 1)?1:thin;
+  double x1 = 0.0, x2 = 0.0;
+  int b = 0;
+  double pi_x = Pi(x1, x2);
+  for(int k = 0; b < B ; k++) { // !! boucle exotique !!
+    double y1 = x1 + R::rnorm(0,sd);
+    double y2 = x2 + R::rnorm(0,sd);
+    double pi_y = Pi(y1, y2) / Pi(x1, x2);
+    double u = R::unif_rand();
+    if(u * pi_x < pi_y) {
+      x1 = y1;
+      x2 = y2;
+      pi_x = pi_y;
+    }
+    if(k > burn && (k % thin) == 0) {
+      R(b,0) = x1;
+      R(b,1) = x2;
+      b++;
+    }
+    if((k % 1000) == 0) // toutes les mille itérations
+      checkUserInterrupt();
+  }
+  return R;
+}
+```
+
+Le paramètre `burn` permet de ne pas retenir les premières itérations ;
+le paramètre `thin` permet de ne retenir qu'une itération sur `thin` (pour 
+réduire la dépendance entre les tirages successifs).
+
+**À noter :** la fonction `checkUserInterrupt()` qui permet d'interrompre
+le programme en cas d'appui sur ctrl + C, ou sur le petit panneau STOP de R studio.
+On n'appelle pas cette fonction à chaque tour de boucle car elle est longue
+à calculer !
+
+À noter également : une boucle exotique, puisque la condition d'arrêt
+n'est pas sur le compteur de boucle `k`, mais sur `b`, qui est régulièrement
+incrémenté dans la boucle (mais, en général, pas à chaque tour).
+

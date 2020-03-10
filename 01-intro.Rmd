@@ -1,0 +1,160 @@
+# Objets de R
+
+On supposera que les objets de R sont bien connus. Dans ce court chapitre nous allons
+simplement voir comment examiner leur structure.
+
+## Types
+
+L'instruction `typeof` permet de voir le type des objets. Considérons trois vecteurs, une
+matrice, une liste, un data frame, un facteur.
+
+```{r prompt = TRUE, comment = NA}
+a <- c("bonjour", "au revoir")
+b <- c(TRUE, FALSE, TRUE, TRUE)
+c <- c(1.234, 12.34, 123.4, 1234)
+d <- matrix( rpois(12, 2), 4, 3)
+e <- list(un = a, deux = b)
+f <- data.frame(b, c)
+g <- factor( c("F", "M", "F", "F") )
+typeof(a) # chaines de caractères
+typeof(b) # valeurs vrai / faux
+typeof(c) # nombres "à virgule"
+typeof(d) # nombres entiers
+typeof(e) # liste
+typeof(f) # data frame = liste
+typeof(g) # facteur = entiers (!)
+```
+
+Il y a deux types de variables numériques : `double` (nombres « à virgule », en formant dit « flottant ») et `integer`
+(entiers). Les entiers s'obtiennent en tapant `0L`, `1L`, etc; certaines commandes renvoient des entiers:
+```{r prompt = TRUE, comment = NA}
+typeof(0)
+typeof(0L)
+typeof(0:10)
+typeof(which(c > 100))
+typeof(rpois(10, 1))
+```
+On remarque que le facteur `g` a pour type `integer`. Ce petit mystère s'éclaircira bientôt.
+
+Pour examiner le contenu d'un objet avec une information sur son 
+type, on peut utiliser `str`. 
+
+```{r prompt = TRUE, comment = NA}
+str(a) # chaines de caractères
+str(b) # vrai / faux
+str(c) # "à virgule"
+str(d) # entiers (matrice 4x3)
+str(e) # liste
+str(f) # data frame
+str(g) # facteur
+```
+
+## Attributs
+
+Les objets de R ont des « attributs ». Ainsi donner des noms
+aux éléments de `c` revient à lui donner un attribut `names`
+
+```{r prompt = TRUE, comment = NA}
+names(c) <- c("elt1", "elt2", "elt3", "elt4")
+c
+attributes(c)
+```
+
+Ce qui différentie une matrice d'un vecteur, c'est l'attribut `dim`:
+
+```{r prompt = TRUE, comment = NA}
+attributes(d)
+````
+
+Les data frames et les facteurs ont également des attributs :
+```{r prompt = TRUE, comment = NA}
+attributes(f)
+attributes(g)
+````
+
+Les attributs peuvent être modifiés avec la syntaxe `attributes(x) <- ...` 
+ou un individuellement avec `attr(x, which)` :
+```{r prompt = TRUE, comment = NA}
+attr(d, "dim")
+attr(d, "dim") <- c(2L, 6L)
+d
+```
+
+## Mieux examiner les objets 
+
+La fonction `dput` 
+permet d'obtenir une forme qui peut être copiée dans une autre session R ; ceci
+permet parfois d'obtenir des informations plus précises sur la représentation
+interne d'un objet. Nous allons l'utiliser ici pour mieux comprendre la 
+construction des matrices, des data frames, et des facteurs.
+
+Il est nécessaire de jeter au préalable un œil à l'aide de `structure` pour mieux 
+comprendre le résultat. On y précise notamment :
+```
+     For historical reasons (these names are used when deparsing),
+     attributes ‘".Dim"’, ‘".Dimnames"’, ‘".Names"’, ‘".Tsp"’ and
+     ‘".Label"’ are renamed to ‘"dim"’, ‘"dimnames"’, ‘"names"’,
+     ‘"tsp"’ and ‘"levels"’.
+```
+
+### Cas de la matrice
+```{r prompt = TRUE, comment = NA}
+dput(d)
+```
+Une matrice est un vecteur muni d'un attribut `dim` (qui apparaît
+comme `.Dim` dans le résultat de `dput`).
+
+### Cas du data frame :
+```{r prompt = TRUE, comment = NA}
+dput(f)
+```
+Un data frame est une liste munie d'un attribut `class = "data.frame"` et
+d'un attribut `row.names` (ici, la valeur de cet attribut est la convention
+pour « 4 lignes non nommées »).
+
+### Cas du facteur :
+```{r prompt = TRUE, comment = NA}
+dput(g)
+levels(g)
+```
+Un facteur est qu'un vecteur d'entiers muni d'attributs `class = "factor"`. 
+et `levels` (les niveaux du facteur), qui apparaît dans `structure`
+sous le nom `.Label` ; cet attribut est également accessible via 
+la fonction `levels`.
+
+On peut par exemple fabriquer un facteur à partir d'un vecteur d'entiers, ainsi :
+
+```{r prompt = TRUE, comment = NA}
+h <- c(2L, 1L, 1L, 2L)
+attributes(h) <- list(levels = c("L1", "L2"), class = "factor")
+h
+```
+
+## Pour les apprentis sorciers
+
+La fonction interne `inspect` permet de voir l'adresse où se trouve
+l'objet, son type (d'abord codé numériquement, par exemple `13` pour `integer`
+puis le nom conventionnel de ce type, `INTSXP`), et quelques autres informations ;
+les objets complexes (leurs attributs) sont déroulés.
+
+```{r prompt = TRUE, comment = NA}
+.Internal(inspect( 1:10 ))
+.Internal(inspect( c(0.1, 0.2) ))
+a <- c(0.1, 0.2)
+.Internal(inspect( a ))
+names(a) <- c("A", "B")
+.Internal(inspect( a ))
+.Internal(inspect( h ))
+```
+
+Les plus braves pourront consulter le code de cette fonction, ainsi que tout le code de R,
+à cette adresse : https://github.com/wch/r-source/tree/trunk/src
+plus précisément pour `inspect`, dans `src/main/inspect.c`...
+
+<!--
+Le package `pryr` écrit par Hadley Wickham (dont le livre, `Advanced R`, est chaudement
+recommandé) propose la notamment la fonction `sexp_type` qui permet de 
+connaître le type interne des objets.
+On utilisera également plus loin dans ce pakage la fonction `bits`.
+-->
+
