@@ -118,7 +118,7 @@ par exemple, qu'une valeur toutes les 100 itérations. Cette opération s'appell
 On prend pour $x = (x_1, x_2)$, 
 $\pi(x) = \bigl(1 + x_1^2 + x_1 x_2 + x_2^2\bigr)^{-3}$, 
 et on utilise une marche aléatoire gaussienne comme celle présentée plus haut,
-qui est une marche symétrique : la formule simplifiée (\ref{rho2}) peut être utilisée.
+qui est une marche symétrique : la formule simplifiée ci-dessus peut être utilisée.
 On doit obtenir quelque chose de similaire à ceci :
 
 ```{r fig= TRUE, fig.width = 15, fig.height = 5, echo  = FALSE, fig.align = "center"}
