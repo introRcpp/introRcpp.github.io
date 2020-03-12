@@ -85,10 +85,13 @@ void int_types() {
   short b;
   int c;
   long int d;
+  int64_t e;
+
   Rcout << "sizeof(a) = " << sizeof(a) << "\n";
   Rcout << "sizeof(b) = " << sizeof(b) << "\n";
   Rcout << "sizeof(c) = " << sizeof(c) << "\n";
   Rcout << "sizeof(d) = " << sizeof(d) << "\n";
+  Rcout << "sizeof(e) = " << sizeof(e) << "\n";
 }
 ```
 
@@ -102,17 +105,43 @@ ambiguïté.
 int_types()
 ```
 
-Notez le `using namespace Rcpp` qui permet de taper simplement `Rcout` au lieu de
-`Rcpp::Rcout`.
+
+Une compilation sous Windows ne produit pas les mêmes résultats: les `long int` ne font que
+32 bits. Pour une implémentation portable, la solution est d'utiliser des types où la taille
+est explicite, comme `int64_t`. 
 
 Les entiers de R correspondent au type `int`(sur 32 bits) mais cela ne vous empêche 
-pas de manipuler dans vos fonctions C++ 
-des entiers plus courts ou plus longs si vous en avez besoin.
+pas de manipuler dans vos fonctions C++ des entiers plus courts ou plus longs si vous en 
+avez besoin.
+
+### Entiers non signés.
 
 Il existe aussi des types non signés, par exemple `unsigned int` ou `unsigned char` ;
-et des raccourcis variés, par exemple `size_t` pour `unsigned long int`.
+et des raccourcis variés, par exemple `size_t` pour `unsigned long int` ou `uint16_t`
+pour des entiers non signées de 8 bits.
 
-#### Notre première fonction « non void »
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+//[[Rcpp::export]]
+void non_signes() {
+  int16_t x = 32766;
+  uint16_t y = 32766;
+  Rcout << "x = " << x << ", y = " << y << "\n";
+  x = x+1; y = y+1;
+  Rcout << "x = " << x << ", y = " << y << "\n";
+  x = x+1; y = y+1;
+  Rcout << "x = " << x << ", y = " << y << "\n";
+  x = x+1; y = y+1;
+  Rcout << "x = " << x << ", y = " << y << "\n";
+}
+```
+Sur 16 bits, les entiers non signés vont de -32768 à 32767, et les entiers signés de 0 à 65535:
+
+```{r prompt = TRUE, comment = NA}
+non_signes()
+```
+### Notre première fonction « non void »
 
 Écrivons notre première fonction qui renvoie une valeur. Son type doit être déclaré
 comme ceci :
@@ -311,6 +340,37 @@ operateurs_exotiques(3)
 ```
 
 
+## Conversion de type: les "cast"
+
+Le compilateur peut réaliser une conversion d'un type à l'autre: on parle de *cast*. Cette conversion 
+peut être implicite, lors par exemple d'une copie d'un type `double` vers un type `int` ; elle peut
+être explicite, lors par exemple de la copie d'une valeur de type `double` vers un `int` ; elle peut
+être rendue explicite en mettant un nom de type entre parenthèses devant une variable : `(int) x` 
+fera une conversion de `x` vers le type `int` (si le type de `x` rend ça possible).
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+void cast(int x, int y) {
+  double a = x; // cast implicite
+  double b = (double) y; // cast explicite
+  double q1 = x / y; // cast implicite (à quel moment a-t-il lieu ?)
+  double q2 = (double) x / (double) y; // cast explicite
+  Rcpp::Rcout << "q1 = " << q1 << "\n";
+  Rcpp::Rcout << "q2 = " << q2 << "\n";
+}
+```
+
+Cet exemle montre les écueils du cast implicite :
+
+```{r prompt = TRUE, comment = NA}
+cast(4,3)
+```
+
+Lors du calcul de `q1`, le cast a été fait après la division entière... était-ce le comportement désiré ?
+
+
+
 ## Booléens
 
 Le type `bool` peut prendre les valeurs vrai/faux. Il correspond au type `logical` de R.
@@ -431,18 +491,18 @@ Une instruction `continue` en cours de boucle fait passer au tour suivant :
 #include <Rcpp.h>
 // [[Rcpp::export]]
 void trois(int n) {
-  for(int i = 0; i < n; i++) {
-    Rcpp::Rcout << i ;
-    if(i%3 == 0) 
+  for(int i = 1; i <= n; i++) {
+    Rcpp::Rcout << i << " " ;
+    if(i%3 != 0) 
       continue;
-    Rcpp::Rcout << ".";
+    Rcpp::Rcout << "\n";
   }
-  Rcpp::Rcout << std::endl;
+  Rcpp::Rcout << "\n";
 }
 ```
 
 ```{r prompt = TRUE, comment = NA}
-trois(12)
+trois(9)
 ```
 
 Quant à `break`, si s'agit bien sûr d'une interruption de la boucle.
@@ -578,114 +638,5 @@ void combien(int n) {
 }
 ```
 
-## Premiers objets Rcpp : les vecteurs
-
-La librairie `Rcpp` définit des types `NumericVector`, `IntegerVector`
-et `LogicalVector` qui permettent de manipuler en C++ les vecteurs de R.
-
-### Créer des vecteurs, les manipuler
-
-L'initialisation avec la syntaxe utilisée dans `vec0` remplit le vecteur de 0.
-Notez l'accès aux éléments d'un vecteur par l'opérateur `[]`; **contrairement
-à la convention utilisée par R, les vecteurs sont numérotés de 0 à n-1.** 
-
-```{Rcpp}
-#include <Rcpp.h>
-// Création d'un vecteur (initialisé à 0)
-// [[Rcpp::export]]
-Rcpp::NumericVector vec0(int n) {
-  Rcpp::NumericVector x(n);
-  return x;
-}
-
-// accès aux éléments
-// [[Rcpp::export]]
-Rcpp::IntegerVector vec1(int n) {
-  Rcpp::IntegerVector x(n);
-  for(int i = 0; i < n; i++) {
-    x[i] = i*i;
-  }
-  return x;
-}
-```
-
-### Exemple : compter les zéros
-
-```{Rcpp}
-#include <Rcpp.h>
-//[[Rcpp::export]]
-int count_zeros(Rcpp::IntegerVector x) {
-  int re = 0; 
-  // x.size() et x.length() renvoient la taille de x
-  int n = x.size();
-  for(int i = 0; i < n; i++) {
-    re += (x[i] == 0)?1:0;
-  }
-  return re;
-}
-```
-
-On a utilisé ici l'*opérateur ternaire* `test?a:b`, qui vaut `a` si `test`
-est `true`, `b` sinon. Comment les performances de cette fonction se comparent-elles 
-avec le code R `sum(a == 0)` ?
-
-```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
-set.seed(1); a <- sample(0:99, 1e6, TRUE)
-count_zeros(a);
-sum(a == 0)
-
-mbm <- microbenchmark::microbenchmark( R = sum(a == 0), Cpp = count_zeros(a)) 
-mbm
-ggplot2::autoplot(mbm)
-```
-
-La différence de vitesse d'exécution s'explique en partie par le fait que le
-code R commence par créer un vecteur de type `logical` (le résultat de `a == 0`),
-puis le parcourt pour faire la somme. Ceci implique beaucoup de lectures écritures
-en mémoire, ce qui ralentit l'exécution.
-
-La solution suivante a été proposée en cours.
-
-```{Rcpp}
-#include <Rcpp.h>
-//[[Rcpp::export]]
-int count_zeros2(Rcpp::IntegerVector x) {
-  int re = 0; 
-  int n = x.size();
-  for(int i = 0; i < n; i++) {
-    (x[i] == 0)?re++:0;
-  }
-  return re;
-}
-```
-
-Mais en fait, comme en R, ajouter un booléen à un int produit une conversion `false` : 0 et `true` : 1.
-
-```{Rcpp}
-#include <Rcpp.h>
-//[[Rcpp::export]]
-int count_zeros3(Rcpp::IntegerVector x) {
-  int re = 0; 
-  int n = x.size();
-  for(int i = 0; i < n; i++) {
-    re += (x[i] == 0);
-  }
-  return re;
-}
-```
-
-Une comparaison s'impose.
-```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
-count_zeros2(a)
-count_zeros3(a)
-mbm <- microbenchmark::microbenchmark( Cpp1 = count_zeros(a), 
-            Cpp2 = count_zeros2(a), 
-            Cpp3 = count_zeros3(a) )
-mbm
-ggplot2::autoplot(mbm)
-```
-
-Selon les options de compilation ou les architectures, il peut y avoir ou non une différence
-entre ces solutions.
 
 

@@ -1,0 +1,107 @@
+# Sucre syntaxique
+
+La fonction R suivante fait un usage abondant de la vectorisation.
+```{r prompt = FALSE}
+bonne.vectorisation <- function(x, y) {
+  z <- 3*x + y
+  if(any(x > 1))
+    z <- z*2;
+  sum( ifelse(z > 0, z, y) )
+} 
+```
+```{r prompt = TRUE, comment = NA}
+set.seed(1); x <- rnorm(10); y <- rnorm(10)
+bonne.vectorisation(x,y) 
+```
+
+La transcription en C++ devrait faire intevenir trois boucles ; 
+c'est un peu fastidieux. Le sucre syntaxique ajouté par les fonctions
+dites *Rcpp sugar* permet d'éviter de les écrire.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+// [[Rcpp::export]] 
+double fonction_sucree(NumericVector x, NumericVector y) {
+  NumericVector z = 3*x + y;
+  if( is_true(any(x > 1)) )
+    z = z*2;
+  return sum(ifelse(z > 0, z, y));
+}
+```
+```{r prompt = TRUE, comment = NA}
+fonction_sucree(x,y)
+```
+
+## Efficacité
+
+Grâce à une implémentation soignée, les fonctions Rcpp sugar sont redoutablement efficaces.
+
+```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
+x <- rnorm(1e6)
+y <- rnorm(1e6)
+mbm <- microbenchmark::microbenchmark( bonne.vectorisation(x,y), fonction_sucree(x,y) )
+mbm
+ggplot2::autoplot(mbm)
+```
+
+Revenons cependant à notre exemple de comptage de 0 dans un vecteur.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+// [[Rcpp::export]]
+int count_zeroes_sugar(IntegerVector x) {
+  return sum(x == 0);
+}
+```
+
+Comparons cette solution à celle proposée au chapitre précédent.
+
+```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
+set.seed(1); a <- sample(0:99, 1e6, TRUE)
+count_zeroes_sugar(a);
+mbm <- microbenchmark::microbenchmark( R = sum(a == 0), Cpp_sugar = count_zeroes_sugar(a), Cpp = count_zeroes(a))
+mbm
+ggplot2::autoplot(mbm)
+```
+
+On le voit, la fonction qui utilise le sucre syntaxique, bien que toujours
+très efficace, n'atteint pas toujours la performance d'une fonction plus rustique.
+
+## Un exemple de la Rcpp Gallery
+
+Un exemple tiré de la Rcpp Gallery http://gallery.rcpp.org/articles/simulating-pi/
+(estimation de $\pi$ par la méthode de Monte-Carlo) et la variante avec une boucle.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+// [[Rcpp::export]]
+double pi_sugar(const int N) {
+    NumericVector x = runif(N);
+    NumericVector y = runif(N);
+    // NumericVector d = sqrt(x*x + y*y);
+    NumericVector d = x*x + y*y;
+    return 4.0 * sum(d < 1.0) / N;
+}
+
+// [[Rcpp::export]]
+double pi_boucle(const int N) {
+  int S = 0;
+  for(int i = 0; i < N; i++) {
+    double x = R::runif(0, 1); 
+    double y = R::runif(0, 1); 
+    S += (x*x + y*y) < 1.0; // cast implicite bool vers int
+  }
+  return (4.0 * (double) S / (double) N);
+}
+```
+
+```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
+pi_sugar(1e6)
+pi_boucle(1e6)
+mbm <- microbenchmark::microbenchmark(pi_sugar(1e6), pi_boucle(1e6))
+mbm
+ggplot2::autoplot(mbm)
+```

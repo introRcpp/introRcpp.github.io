@@ -3,20 +3,6 @@
 ## L'algorithme 
 
 ```{r echo = FALSE}
-PI <- function(x) (1 + x[1]**2 + x[1]*x[2] + x[2]**2)^(-3)
-MH <- function(B, sd) {
-  R <- matrix(0.0, nrow = B, ncol = 2)
-  x <- R[1,]
-  for(b in 2:B) {
-    y <- x + rnorm(2, 0, sd = sd)
-    rho <- PI(y) / PI(x)
-    u <- runif(1)
-    if(u < rho) 
-      x <- y
-    R[b, ] <- x
-  }
-  return(R);
-}
 set.seed(1)
 ```
 
@@ -119,9 +105,27 @@ On prend pour $x = (x_1, x_2)$,
 $\pi(x) = \bigl(1 + x_1^2 + x_1 x_2 + x_2^2\bigr)^{-3}$, 
 et on utilise une marche aléatoire gaussienne comme celle présentée plus haut,
 qui est une marche symétrique : la formule simplifiée ci-dessus peut être utilisée.
-On doit obtenir quelque chose de similaire à ceci :
 
-```{r fig= TRUE, fig.width = 15, fig.height = 5, echo  = FALSE, fig.align = "center"}
+L'implémenation en R n'est pas difficile:
+```{r prompt = FALSE}
+PI <- function(x) (1 + x[1]**2 + x[1]*x[2] + x[2]**2)^(-3)
+MH <- function(B, sd) {
+  R <- matrix(0.0, nrow = B, ncol = 2)
+  x <- R[1,]
+  for(b in 2:B) {
+    y <- x + rnorm(2, 0, sd = sd)
+    rho <- PI(y) / PI(x)
+    u <- runif(1)
+    if(u < rho) 
+      x <- y
+    R[b, ] <- x
+  }
+  return(R);
+}
+```
+
+Voici un exemple de mise en œuvre :
+```{r fig= TRUE, fig.width = 15, fig.height = 5, echo  = FALSE, fig.align = "center", cache=TRUE}
 X <- MH(5e4, sd = 0.8)
 # var(X)
 # thinning (pour le nuage de points)
@@ -182,10 +186,6 @@ NumericMatrix MH_cpp(int B, double sd) {
 }
 ```
 
-## Comparaisons
-
-TBC
-
 ## Une version améliorée
 
 Il est souhaitable d'éviter de recalculer `Pi(x1, x2)` à
@@ -203,7 +203,7 @@ NumericMatrix MH_cpp_1(int B, double sd, int burn = 0, int thin = 1) {
   NumericMatrix R(B, 2);
   thin = (thin < 1)?1:thin;
   double x1 = 0.0, x2 = 0.0;
-  int b = 0;
+  int b = 1;
   double pi_x = Pi(x1, x2);
   for(int k = 0; b < B ; k++) { // !! boucle exotique !!
     double y1 = x1 + R::rnorm(0,sd);
@@ -234,7 +234,7 @@ réduire la dépendance entre les tirages successifs).
 **À noter :** la fonction `checkUserInterrupt()` qui permet d'interrompre
 le programme en cas d'appui sur ctrl + C, ou sur le petit panneau STOP de R studio.
 On n'appelle pas cette fonction à chaque tour de boucle car elle est longue
-à calculer !
+à exécuter !
 
 À noter également : une boucle exotique, puisque la condition d'arrêt
 n'est pas sur le compteur de boucle `k`, mais sur `b`, qui est régulièrement

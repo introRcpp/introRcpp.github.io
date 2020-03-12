@@ -303,6 +303,36 @@ x <- seq(0,1,0.1); invisible(doubler2(x)); x
 x <- seq(0,1,0.1); invisible(doubler3(x)); x
 ```
 
+On peut également modifier « en place » les éléments d'une liste:
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+//[[Rcpp::export]]
+void increment_alpha(List x) {
+  if( x.containsElementNamed("alpha") ) {
+    SEXP R = x["alpha"];
+    if( TYPEOF(R) != REALSXP )
+      stop("elt alpha n'est pas un 'NumericVector'");
+    NumericVector Alpha(R);
+    Alpha = Alpha+1;  // sugar
+  } else 
+    stop("Pas d'elt alpha");
+}
+```
+
+Exemple:
+
+```{r prompt = TRUE, comment = NA}
+x <- list( alpha = c(0.1,7), beta = 1:4)
+x
+increment_alpha(x)
+x
+```
+
+
+
+
 ## Surcharge
 
 En C++ deux fonctions peuvent avoir le même nom, à condition que le type des
@@ -497,10 +527,10 @@ qui laisse le compilateur deviner le type, quand le contexte le permet, de faço
 ```{Rcpp}
 #include <Rcpp.h>
 //[[Rcpp::export]]
-int count_zeros3(Rcpp::IntegerVector x) {
+int count_zeroes3(Rcpp::IntegerVector x) {
   int re = 0;
   for(auto a : x) {
-    re += (a == 0)?1:0;
+    if(a == 0) ++re;
   }
   return re;
 }
@@ -508,7 +538,7 @@ int count_zeros3(Rcpp::IntegerVector x) {
 
 ```{r prompt = TRUE, comment = NA}
 set.seed(1); a <- sample(0:99, 1e6, TRUE)
-count_zeros3(a);
+count_zeroes3(a);
 ```
 
 Si on veut pouvoir modifier la valeur des éléments du vecteur, il suffit
@@ -532,7 +562,7 @@ a
 **NOTE** En utilisant une référence, on évite la copie. Même si on ne désire pas modifier les éléments
 du vecteur, cela peut modifier énormément les performances de la boucle en question ! 
 
-**TODO  ajouter exemple !!!**
+**TODO ajouter exemple !!!**
 
 ### Nombres spéciaux
 
