@@ -2,7 +2,6 @@
 
 On supposera que les objets de R sont bien connus. Dans ce court chapitre nous allons
 simplement voir comment examiner leur structure.
-
 ## Types
 
 L'instruction `typeof` permet de voir le type des objets. Considérons trois vecteurs, une

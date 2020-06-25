@@ -1,0 +1,430 @@
+# Chaînes de caractères
+
+Notions de code Ascii. Iso-8859-1 et variantes. UTF-8.
+
+Les codes 0 à 31 correspondent à des codes de contrôles (par exemple 8 pour
+'backspace') et ne sont pas imprimables ; c'est aussi le cas du caractère 127
+qui correspond à 'del'.
+
+Affichons le code Ascii de 32 à 127 sur 8 colonnes.
+
+```{Rcpp}
+#include <Rcpp.h>
+#define COLS 8
+#define OFF (96/COLS)
+//[[Rcpp::export]]
+void ascii() {
+  for(int i = 32;;i++) { 
+    for(int k = 0; k < COLS; k++) {
+       Rprintf("%03d : ",i + k*OFF);
+       if(i + k*OFF < 127)
+         Rcpp::Rcout << (char) (i + k*OFF) << "    ";
+       else {
+         Rcpp::Rcout << "DEL" << std::endl;
+         return;
+       }
+    }
+    Rcpp::Rcout << std::endl;
+  }
+}
+```
+```{r prompt = TRUE}
+ascii()
+```
+## Chaînes de la vieille école : `C strings`
+
+Ce sont des pointeurs vers un entier de type `char`, c'est-à-dire codé sur 8 bits -- à moins de 
+travailler sur une architecture très exotique -- et pouvant prendre des valeurs de 0 à 255.
+La chaîne de caractère est un tableau dont la fin est signalée par la présence d'une valeur nulle.
+
+EN C et C++, la syntaxe `'a'` (guillement simple) implique le remplacement de la lettre
+par son code ascii (pour `a` c'est 97). Dans l'exemple ci-dessous, la chaîne 'b' est explicitement
+présentée comme le tableau contenant 116, 111, 105, 0. Les lettres de code ascii qui correspondent
+sont `t`, `o` et `i` ; si on avait écrit `char b[] = "toi";` le résultat aurait été identique.
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+void quelques_chaines() {
+  char a[] = "Bonjour";
+  char b[4] = {116, 111, 105, 0};      // 3 lettres et un 0 final
+  char c[5] = {'v', 'o', 'u', 's', 0}; // 4 lettres et un 0 final
+  Rcpp::Rcout << a << " " << b << std::endl;
+  Rcpp::Rcout << a << " " << c << std::endl;
+  Rcpp::Rcout << "Taille de a = " << sizeof(a) << std::endl;
+  Rcpp::Rcout << "Longueur de la chaîne = " << std::strlen(a) << std::endl;
+  Rcpp::Rcout << "a[0] = " << a[0] << std::endl;
+  Rcpp::Rcout << "a[1] = " << a[1] << std::endl;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+quelques_chaines()
+```
+
+Notez `std::strlen(a)` qui renvoie la longueur de la chaîne `a`.
+
+Comme ce sont des pointeurs, on ne va pas bêtement tester leur égalité...
+Il faut utiliser `std::strcmp(a,b)` qui renvoie 0 si les chaînes sont égales,
+et dans le cas contraire un nombre dont le signe est positif si $a < b$
+dans l'ordre lexicographique, négatif sinon.
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+//[[Rcpp::export]]
+void compare() {
+  char a[] = "Gaston";
+  char b[] = "Fantasio";
+  char c[] = "Gaston";
+  SHOW(a == b);
+  SHOW(a == c);  
+  SHOW( std::strcmp(a,b) );
+  SHOW( std::strcmp(b,a) );
+  SHOW( std::strcmp(a,c) );
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+compare()
+```
+
+### Manipuler les chaînes de R comme des *C strings*
+
+La fonction `CHAR`, appliquée à un élément d'un `CharacterVector`, renvoie un `const char *`.
+Le mot clef `const` devant un type indique au compilateur que le contenu ne peut être modifié :
+un `const char` est `char` « constant » ; le pointeur renvoyé par `CHAR`
+pointe vers des `const char`, c'est-à-dire vers une chaîne de caractères que l'utilisateur n'a pas le droit
+de modifier. On peut tricher en utilisant un cast vers un `char *` mais c'est à nos risques
+et périls...
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+//[[Rcpp::export]]
+void c_strings(CharacterVector x) {
+  int n = x.size();
+  for(int i = 0; i < n; i++) {
+    const char * a = CHAR(x[i]);
+    Rcout << i << " : " << a << std::endl;
+    Rcout << " adresse : " << (void *) a << std::endl;
+  }
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+a <- c("gaston", "jeanne", "gaston")
+c_strings(a)
+```
+
+On s'aperçoit ici que les deux `"gaston"` sont stockés par R à la même adresse (les
+apprentis sorciers qui auraient joué avec `.Internal(inspect(a))` l'auront constaté).
+Ceci incite à être très prudent, toute modification *in place* du premier modifierait
+l'autre ! Ça n'est pas pour rien que `CHAR` renvoie un `const char *` et non 
+un `char *`.
+
+### Exemple d'utilisation des C strings
+
+C'est rustique (et risqué) mais ça peut être redoutablement efficace. Si on sait que 
+les codes ascii des nombres de 0 à 9 se suivent...
+
+```{Rcpp}
+#include <Rcpp.h>
+inline int fast_atoi(const char * a)
+{
+    int re = 0;
+    while( *a ) {
+        re = re*10 + (*(a++) - '0');
+    }
+    return re;
+}
+//[[Rcpp::export]]
+Rcpp::IntegerVector as_int(Rcpp::CharacterVector x) {
+  int n = x.size();
+  Rcpp::IntegerVector R(n);
+  for(int i = 0; i < n; i++) {
+    const char * a = CHAR(x[i]);
+    R[i] = fast_atoi(a);
+  }
+  return R;
+}
+```
+
+Cette fonction file comme le vent mais ne fait rien pour vérifier que la chaîne code correctement un entier !
+```{r prompt = TRUE, comment = NA}
+as_int( c("456", "123", "789", "Dave Brubeck") )
+```
+
+Autres possibilités offertes pas les C-strings : modifier une chaîne *in place* en en remplaçant les 
+espaces par des 0 (code de fin de chaîne) pour en isoler les mots, etc. Cela peut aller beaucoup
+plus vite que les opérations équivalentes avec les chaînes C++.
+
+## Chaînes C++
+
+La librairie standard contient la classe `string` qui facilite
+grandement le travail.
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+//[[Rcpp::export]]
+void autres_chaines() {
+  std::string x = "ça va ?";
+  std::string y = "Bonjour";
+  std::string z = y + " " + x; // Concaténation
+  SHOW(x);
+  SHOW(y);
+  SHOW(y[0]);
+  SHOW(y[1]);
+  SHOW(z);
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+autres_chaines()
+```
+
+La comparaison est grandement facilitée :
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+//[[Rcpp::export]]
+void compare2() {
+  std::string a = "Gaston";
+  std::string b = "Fantasio";
+  std::string c = "Gaston";
+  SHOW(a == b);
+  SHOW(a == c);  
+  SHOW(a < b);
+  SHOW(b < c);
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+compare2()
+```
+
+### Passer d'un style à l'autre
+
+Cette fonction démontre comment passer facilement d'un style de chaîne à l'autre :
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+//[[Rcpp::export]]
+void conversions() {
+  char a[] = "Gaston";
+  std::string b(a);
+  SHOW(a);  
+  SHOW(b);  
+
+  std::string x = "Longtarin";
+  const char * y = x.c_str();
+  SHOW(x);
+  SHOW(y);
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+conversions()
+```
+
+
+### Manipuler les chaînes de R comme des `std::string`
+
+On peut pour commencer les passer simplement en argument d'une fonction :
+
+```{Rcpp}
+#include <Rcpp.h>
+//[[Rcpp::export]]
+void perroquet(std::string x) {
+  Rcpp::Rcout << "Vous dites : " << x << std::endl;
+  Rcpp::Rcout << "longueur = " << x.size() << std::endl;
+  Rcpp::Rcout << "adresse &x[0] = " << (void *) &x[0] << std::endl;
+  Rcpp::Rcout << "adresse x.c_str() = " << (void *) x.c_str() << std::endl;
+}
+```
+
+Le `(void *)` est nécessaire pour faire afficher l'adresse du pointeur : si on fournit
+un objet de type `char *` à l'opérateur `<<` il considère qu'on veut afficher la chaîne 
+de caractère. Essayez `Rcpp::Rcout << y` si nécessaire.
+
+```{r prompt = TRUE, comment = NA}
+perroquet("bavard")
+```
+
+La fonction `as<std::string>` permet la conversion vers une `std::string` (notez
+la présence des chevrons `<>` : `as` est une fonction templatée).
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+//[[Rcpp::export]]
+void cpp_strings(CharacterVector x) {
+  int n = x.size();
+  for(int i = 0; i < n; i++) {
+    std::string a = as<std::string>(x[i]);
+    Rcout << i << " : " << a << std::endl;
+  }
+}
+```
+
+Application :
+
+```{r prompt = TRUE, comment = NA}
+a <- c("gaston", "jeanne", "gaston")
+cpp_strings(a)
+```
+
+## Chaines `Rcpp::String`
+
+Les `CharacterVector` sont des vecteurs de chaînes de caractères. On a rarement
+besoin de manipuler leurs éléments séparément autrement qu'en les convertissant
+en `char *` ou en `std::string`, comme on l'a fait plus haut ; cependant la
+classe `Rcpp::String` permet de le faire. Voici un bref exemple.
+
+```{Rcpp}
+#include <Rcpp.h>
+#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
+using namespace Rcpp;
+//[[Rcpp::export]]
+void atomic_strings(CharacterVector x) {
+  int n = x.size();
+  for(int i = 0; i < n; i++) {
+    String a = x[i];
+    const char * b = a.get_cstring();      // équivaut à b = CHAR(x(i]);
+    Rcout << i << " : " << b << std::endl;
+  }
+}
+```
+```{r prompt = TRUE, comment = NA}
+atomic_strings(a)
+```
+
+
+## Exemple : lecture d'un fichier
+
+Quand on aura vu les vecteurs standards !
+
+**(TODO)**
+
+## Addendum sur les listes
+
+Dans le cas des vecteurs nommés ou des listes (ou des data frame),
+on peut utiliser indifféremment 
+
+Les fonctions ci-dessous ne gèrent pas les erreurs, voir dans le
+chapitre sur les listes la fonction `get_alpha`.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+//[[Rcpp::export]]
+NumericVector get_from_list_1(List L, std::string k) {
+  NumericVector R = L[k];
+  return R;
+}
+```
+
+Pour en finir avec le sujet un dernier exemple de traitement du
+contenu d'une liste : énumérer les éléments, leur nom, et 
+leur type.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+std::string le_type(SEXP x) {
+  switch( TYPEOF(x) ) {
+    case INTSXP:
+      return "integer";
+    case REALSXP:
+      return "double";
+    case LGLSXP:
+      return "logical";
+    case STRSXP:
+      return "character";
+    case VECSXP:
+      return "list";
+    case NILSXP:
+      return "NULL";
+    default:
+      return "autre";
+  }
+}
+
+//[[Rcpp::export]]
+void contenu_liste(List L) {
+  int n = L.size();
+  if(n == 0) {
+    Rcout << "liste vide\n";
+    return;
+  }
+  SEXP R = L.names();
+  bool has_names = (TYPEOF(R) == STRSXP);
+  for(int i = 0; i < n; i++) {
+    Rcout << i ;
+    if(has_names)
+      if( strcmp( CHAR(STRING_ELT(R, i)), "" ) )
+        Rcout << " \"" << CHAR(STRING_ELT(R, i)) << "\"";
+    Rcout << " : " << le_type(L[i]) << std::endl;
+  }
+}
+``` 
+
+Notez l'usage de `STRING_ELT(R, i)` : si `R` était un `CharacterVector`
+on pourrait écrire `R[i]`, mais on a ici utilisé un `SEXP`, ce qui 
+oblige à utiliser cette fonction un peu inélégante.
+
+## Exemple : chaînes de caractère et spécialisation de template
+
+Saisissons l'occasion de la manipulation de chaînes de caractères pour illustrer la 
+possibilité de donner des implémentations différentes d'un même template.
+
+La conversion d'une `std::string` vers un `double` se fait avec `std::stod`, vers
+un `int` avec `std::stoi`, vers un `float` avec `std::stof`. Le template ci-dessous
+permet d'utiliser `sto<double>`, `sto<int>`, `sto<float>`.
+
+**Note** l'argument `const std::string & x` est une référence à une chaîne `std::string` *constante* ;
+ceci indique au compilateur que la fonction ne modifiera jamais `x`. Cela peut permettre des 
+optimisations à la compilation.
+
+```{Rcpp eval = FALSE}
+#ifndef STO_
+#define STO_
+// Déclaration du template
+template<typename T>
+T sto(const std::string & x);
+
+// Implémentations pour les types 'double', '
+template<>
+double sto<double>(const std::string & x) {
+  return std::stod(x);
+}
+
+template<>
+float sto<float>(const std::string & x) {
+  return std::stof(x);
+}
+
+template<>
+int sto<int>(const std::string & x) {
+  return std::stoi(x);
+}
+#endif
+```
+
+L'intérêt d'une telle définition n'est pas forcément apparent. Un des avantages
+est qu'un tel template peut être appelé dans un autre template plus complexe. Par 
+exemple :
+
+```{Rcpp eval = FALSE}
+template<typename T>
+T somme(std::string a, std::string b) {
+  return sto<T>(a) + sto<T>(b);
+}
+```
+
+
+

@@ -395,8 +395,6 @@ avec `TYPE = int` puis avec `TYPE = double`.
 
 ```{Rcpp}
 #include <Rcpp.h>
-using namespace Rcpp;
-
 template<typename TYPE>
 TYPE d2(TYPE a, TYPE b) {
   return a*a + b*b;
@@ -407,11 +405,11 @@ void exemple_template_d2() {
   double x = 1.0;
   double y = 2.4;
   double z = d2(x, y);
-  Rcout << "d2(x,y) = " << z << std::endl;
+  Rcpp::Rcout << "d2(x,y) = " << z << std::endl;
   int u = 1;
   int v = 4;
   int w = d2(u, v);
-  Rcout << "d2(u,v) = " << w << std::endl;
+  Rcpp::Rcout << "d2(u,v) = " << w << std::endl;
 }
 ```
 
@@ -422,7 +420,26 @@ exemple_template_d2()
 ```
 
 Si le compilateur peinait à trouver par quoi il faut remplacer `TYPE`, il serait
-possible de préciser en tapant par exemple `d2<float>`. 
+possible de préciser en tapant par exemple `d2<float>`. Ce template peut fonctionner
+dès que les opérateurs `+` et `*` sont définis.
+
+```{Rcpp templated2bis}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+template<typename TYPE>
+TYPE d2(TYPE a, TYPE b) {
+  return a*a + b*b;
+}
+//[[Rcpp::export]]
+NumericVector exemple_template_d2bis(NumericVector x, NumericVector y) {
+  return d2(x,y);
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+exemple_template_d2bis( c(1,2), c(3,1) )
+```
 
 On peut donner un autre exemple en faisant un template pour la fonction `swap`
 que nous avions écrite il y a quelques chapitres.

@@ -46,8 +46,7 @@ hook2 <- function(x){ gsub("```\n+```\n", "", x) }
 knitr::knit_hooks$set(document = hook2)
 ```
 
-
-# À propos de ce document
+# À propos de ce document {-}
 
 Ce document est issu d'un cours d'école doctorale donné en février/mars 2019.
 Un effort a été fait pour le rendre lisible sans les commentaires fait en cours,
@@ -70,8 +69,11 @@ le plus court et plus amène `A tour of C++` du même auteur.
 
 `r if(knitr:::pandoc_to() == "html") "Une version pdf de ce document est également <a href = 'intro_cpp.pdf'>disponible ici</a>"`
 
-```{r child=c("01-intro.Rmd", "02-bases.Rmd", "03-manipuler.Rmd", "04-sucre.Rmd")}
+```{r child=c("01-intro.Rmd", "02-bases.Rmd", "03-manipuler.Rmd", "04-sucre.Rmd"), }
 ```
 
-```{r child=c("05-Metropolis.Rmd", "06-moreCpp.Rmd")}
+```{r child=c("05-Metropolis.Rmd", "06-moreCpp.Rmd", "07-stdlib.Rmd")}
+```
+
+```{r child=c("08-packages.Rmd", "09-strings.Rmd")}
 ```
