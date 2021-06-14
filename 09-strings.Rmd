@@ -155,7 +155,7 @@ Cette fonction file comme le vent mais ne fait rien pour vérifier que la chaîn
 as_int( c("456", "123", "789", "Dave Brubeck") )
 ```
 
-Autres possibilités offertes pas les C-strings : modifier une chaîne *in place* en en remplaçant les 
+Autres possibilités offertes par les C-strings : modifier une chaîne *in place* en en remplaçant les 
 espaces par des 0 (code de fin de chaîne) pour en isoler les mots, etc. Cela peut aller beaucoup
 plus vite que les opérations équivalentes avec les chaînes C++.
 
