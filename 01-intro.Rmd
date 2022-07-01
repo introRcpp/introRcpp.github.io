@@ -3,26 +3,23 @@
 On supposera que les objets de R sont bien connus. Dans ce court chapitre nous allons
 simplement voir comment examiner leur structure.
 
-## Types
+## R objects have types
 
 L'instruction `typeof` permet de voir le type des objets. Considérons trois vecteurs, une
 matrice, une liste, un data frame, un facteur.
 
+### Numerical types
+
 ```{r prompt = TRUE, comment = NA}
-a <- c("bonjour", "au revoir")
-b <- c(TRUE, FALSE, TRUE, TRUE)
-c <- c(1.234, 12.34, 123.4, 1234)
-d <- matrix( rpois(12, 2), 4, 3)
-e <- list(un = a, deux = b)
-f <- data.frame(b, c)
-g <- factor( c("F", "M", "F", "F") )
-typeof(a) # chaines de caractères
-typeof(b) # valeurs vrai / faux
-typeof(c) # nombres "à virgule"
-typeof(d) # nombres entiers
-typeof(e) # liste
-typeof(f) # data frame = liste
-typeof(g) # facteur = entiers (!)
+typeof( c(1.234, 12.34, 123.4, 1234) )
+typeof( runif(10) )
+```
+
+```{r prompt = TRUE, comment = NA}
+M <- matrix( rpois(12, 2), 4, 3)
+typeof(M)
+F <- factor( c("F", "M", "F", "F") )
+typeof(F)
 ```
 
 Il y a deux types de variables numériques : `double` (nombres « à virgule », en format dit « flottant ») et `integer`
@@ -31,30 +28,50 @@ Il y a deux types de variables numériques : `double` (nombres « à virgule »,
 typeof(0)
 typeof(0L)
 typeof(0:10)
-typeof(which(c > 100))
-typeof(rpois(10, 1))
+typeof( which(runif(5) > 0.5) )
+typeof( rpois(10, 1) )
 ```
-On remarque que le facteur `g` a pour type `integer`. Ce petit mystère s'éclaircira bientôt.
+On remarque que le facteur `F` a pour type `integer`. Ce petit mystère s'éclaircira bientôt.
+
+### Logical
+
+We shall see later that, internally, the logical `TRUE` and `FALSE` are stored as
+integers `1` and `0`. They however have their proper type.
+
+```{r prompt = TRUE, comment = NA}
+typeof( c(TRUE, FALSE) )
+```
+
+### Lists 
+
+Data frame are lists. This will be clarified soon.
+
+```{r prompt = TRUE, comment = NA}
+L <- list(a = runif(10), b = "dada")
+typeof(L)
+D <- data.frame(x = 1:10, y = letters[1:10])
+typeof(D)
+```
+
+### A glimpse on the objects type
 
 Pour examiner le contenu d'un objet avec une information sur son 
 type, on peut utiliser `str`. 
 
 ```{r prompt = TRUE, comment = NA}
-str(a) # chaines de caractères
-str(b) # vrai / faux
-str(c) # "à virgule"
-str(d) # entiers (matrice 4x3)
-str(e) # liste
-str(f) # data frame
-str(g) # facteur
+str(M)
+str(F)
+str(L)
+str(D)
 ```
 
-## Attributs
+## R objects have attributes.
 
 Les objets de R ont des « attributs ». Ainsi donner des noms
-aux éléments de `c` revient à lui donner un attribut `names`
+aux éléments d'un vecteur revient à lui donner un attribut `names`.
 
 ```{r prompt = TRUE, comment = NA}
+c <- runif(4)
 names(c) <- c("elt1", "elt2", "elt3", "elt4")
 c
 attributes(c)
@@ -63,24 +80,24 @@ attributes(c)
 Ce qui différentie une matrice d'un vecteur, c'est l'attribut `dim`:
 
 ```{r prompt = TRUE, comment = NA}
-attributes(d)
+attributes(M)
 ```
 
 Les data frames et les facteurs ont également des attributs :
 ```{r prompt = TRUE, comment = NA}
-attributes(f)
-attributes(g)
+attributes(D)
+attributes(F)
 ```
 
 Les attributs peuvent être modifiés avec la syntaxe `attributes(x) <- ...` 
 ou un individuellement avec `attr(x, which)` :
 ```{r prompt = TRUE, comment = NA}
-attr(d, "dim")
-attr(d, "dim") <- c(2L, 6L)
-d
+attr(M, "dim")
+attr(M, "dim") <- c(2L, 6L)
+M
 ```
 
-## Mieux examiner les objets 
+## How to look further at the objects' structure
 
 La fonction `dput` 
 permet d'obtenir une forme qui peut être copiée dans une autre session R ; ceci
@@ -97,25 +114,27 @@ comprendre le résultat. On y précise notamment :
      ‘"tsp"’ and ‘"levels"’.
 ```
 
-### Cas de la matrice
+### Matrices are vectors
 ```{r prompt = TRUE, comment = NA}
-dput(d)
+dput(M)
 ```
 Une matrice est un vecteur muni d'un attribut `dim` (qui apparaît
 comme `.Dim` dans le résultat de `dput`).
 
-### Cas du data frame :
+### Data Frame are lists
+
 ```{r prompt = TRUE, comment = NA}
-dput(f)
+dput(D)
 ```
 Un data frame est une liste munie d'un attribut `class = "data.frame"` et
 d'un attribut `row.names` (ici, la valeur de cet attribut est la convention
 pour « 4 lignes non nommées »).
 
-### Cas du facteur :
+### Factors are integer vectors
+
 ```{r prompt = TRUE, comment = NA}
-dput(g)
-levels(g)
+dput(F)
+levels(F)
 ```
 Un facteur est qu'un vecteur d'entiers muni d'attributs `class = "factor"`. 
 et `levels` (les niveaux du facteur), qui apparaît dans `structure`
@@ -125,9 +144,9 @@ la fonction `levels`.
 On peut par exemple fabriquer un facteur à partir d'un vecteur d'entiers, ainsi :
 
 ```{r prompt = TRUE, comment = NA}
-h <- c(2L, 1L, 1L, 2L)
-attributes(h) <- list(levels = c("L1", "L2"), class = "factor")
-h
+G <- c(2L, 1L, 1L, 2L)
+attributes(G) <- list(levels = c("L1", "L2"), class = "factor")
+G
 ```
 
 ## Pour les apprentis sorciers
@@ -143,8 +162,8 @@ les objets complexes (leurs attributs) sont déroulés.
 a <- c(0.1, 0.2)
 .Internal(inspect( a ))
 names(a) <- c("A", "B")
-.Internal(inspect( a ))
-.Internal(inspect( h ))
+.Internal(inspect( M ))
+.Internal(inspect( L ))
 ```
 
 Les plus braves pourront consulter le code de cette fonction, ainsi que tout le code de R,

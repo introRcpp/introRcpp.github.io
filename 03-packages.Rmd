@@ -6,7 +6,8 @@ aide pour cela. Nous allons dans ce chapitre faire les premiers pas dans la
 création d'un package ; le tome du manuel de R intitulé *Writing R extensions*
 reste une référence indispensable.
 
-Le package que nous allons créer s'appelle `milou`. Vous pouvez le retrouver à l'adresse `https://github.com/introRcpp/milou`.
+Le package que nous allons créer s'appelle `milou`. 
+Vous pouvez le retrouver à l'adresse `https://github.com/introRcpp/milou`.
 
 ## Créer l'arborescence de fichiers
 

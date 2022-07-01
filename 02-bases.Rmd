@@ -1,4 +1,29 @@
-# Bases de C++ 
+# Introducting C++
+
+Types (integer, floats, bool), arrays, and flow control statements.
+
+## Using `Rcpp::sourceCpp`
+
+If you are using linux, install R, Rstudio and the Rcpp package (use `install.packages("Rcpp")\), as well as a C++
+compiler such as `g++`.
+
+If you are using Windows or macOS, install R, Rstudio, the Rcpp package, and Rtools. 
+The simplest way to make sure everything works is to follow the following instructions:
+
+1. Installer Rcpp via la commande install.packages("Rcpp")
+
+2. Cliquer dans le menu `file > new > c++ file` (ou l’équivalent en français) pour créer un nouveau fichier C++ ; un fichier contenant quelques lignes d'exemples va être créé. Sauvez ce fichier puis cliquez sur Source. Rstudio doit vous proposer d’installer "Rtools" : acceptez.
+
+3. Cliquer à nouveau sur Source. Tout doit fonctionner...! Vous êtes prêt à apprendre le C++.
+
+Les exemples de code proposés utilisent souvent le standard C++11. Pour
+pouvoir compiler avec ce standard, n'omettez pas la ligne `// [[Rcpp::plugins(cpp11)]]`
+in the source files.
+Altenatively, using `Sys.setenv("PKG_CXXFLAGS" = "-std=c++11")` inside a R session
+will enable C++11 compilation once for all.
+
+
+## Hello world
 
 Il faut toujours commencer par saluer le monde. Créez un fichier `hello.cpp` contenant le code suivant :
 
@@ -32,7 +57,7 @@ La librairie `iostream` contient en particulier la définition de l'opérateur `
 Elle n'est en fait pas nécessaire ici car `Rcpp.h` contient une directive 
 d'inclusion similaire.
 
-## Nécessité des types 
+## Why types are necessary
 
 C++ est un langage compilé et non interprété. Le compilateur est le programme qui
 lit le code C++ et produit un code assembleur puis du langage machine 
@@ -70,7 +95,11 @@ La librairie standard de C++ offre une collection de types de données très él
 et de fonctions qui les manipulent. Nous commencerons par les types fondamentaux : entiers,
 flottants, booléens.
 
-## Les entiers
+## Integers
+
+There are several types of integers in C++.
+
+### The four main types of integers.
 
 Compilez ce programme qui affiche la taille (en octets) des quatre types d'entiers (signés)
 (le résultat peut théoriquement varier d'une architecture à l'autre, c'est-à-dire
@@ -105,7 +134,6 @@ ambiguïté.
 int_types()
 ```
 
-
 Une compilation sous Windows ne produit pas les mêmes résultats: les `long int` ne font que
 32 bits. Pour une implémentation portable, la solution est d'utiliser des types où la taille
 est explicite, comme `int64_t`. 
@@ -114,7 +142,7 @@ Les entiers de R correspondent au type `int`(sur 32 bits) mais cela ne vous emp�
 pas de manipuler dans vos fonctions C++ des entiers plus courts ou plus longs si vous en 
 avez besoin.
 
-### Entiers non signés.
+### Unsigned integers
 
 Il existe aussi des types non signés, par exemple `unsigned int` ou `unsigned char` ;
 et des raccourcis variés, par exemple `size_t` pour `unsigned long int` ou `uint16_t`
@@ -141,6 +169,28 @@ Sur 16 bits, les entiers non signés vont de -32768 à 32767, et les entiers sig
 ```{r prompt = TRUE, comment = NA}
 non_signes()
 ```
+
+
+### Numerical overflow
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+//[[Rcpp::export]]
+void overflow() {
+  unsigned short x(65530);
+  Rcout << "x = " << x << "\n" ;
+  x = x+5;
+  Rcout << "x = " << x << "\n" ;
+  x = x+5;
+  Rcout << "x = " << x << "\n" ;
+}
+```
+
+```{r prompt = TRUE, comment = NA}
+overflow()
+```
+
 ### Notre première fonction « non void »
 
 Écrivons notre première fonction qui renvoie une valeur. Son type doit être déclaré
@@ -183,6 +233,7 @@ int uninit() {
 Testons :
 ```{r prompt = TRUE, comment = NA}
 uninit()
+uninit()
 ```
 
 On aura parfois 0, mais pas systématiquement (cela dépend de l'état de la mémoire). 
@@ -191,6 +242,8 @@ On peut initialiser `a` lors de la déclaration : `int a = 0;`
 ## Les flottants
 
 Il y a trois types de nombres en format flottant. Le type utilisé par R est le `double` de C++.
+
+### The free types of floating point numbers
 
 ```{Rcpp}
 #include <Rcpp.h>
@@ -206,6 +259,7 @@ void float_types() {
 ```
 
 ### Précision du calcul 
+
 Parenthèse de culture informatique générale. Voici ce que répond R au test `1.1 - 0.9 = 0.2`.
 
 ```{r prompt = TRUE, comment = NA}
@@ -282,12 +336,12 @@ void numeric_limits() {
 numeric_limits()
 ```
 
-## Constantes numériques
+### Constantes numériques
 
 Attention, si le R considère que `0` ou `1` est un `double` (il faut taper `0L`
 ou `1L` pour avoir un `integer`), pour C++ ces valeurs sont des entiers. Pour
-initialiser proprement un `double` il faut taper `0.` ou `0.0`, etc. La plupart
-du temps le compilateur corrige ces petites erreurs.
+initialiser proprement un `double` il faudrait normale taper `0.` ou `0.0`, etc;
+cependant le compilateur fera la conversion de type si nécessaire.
 
 ## Opérateurs arithmétiques
 
@@ -370,7 +424,6 @@ cast(4,3)
 Lors du calcul de `q1`, le cast a été fait après la division entière... était-ce le comportement désiré ?
 
 
-
 ## Booléens
 
 Le type `bool` peut prendre les valeurs vrai/faux. Il correspond au type `logical` de R.
@@ -430,6 +483,7 @@ Le résultat de `SHOW(a)` sera expliqué plus tard (pointeurs).
 ### Boucles `for`
 
 Plus de 90\% des boucles `for` s'écrivent ainsi :
+
 ```{Rcpp}
 #include <Rcpp.h>
 // [[Rcpp::export]]

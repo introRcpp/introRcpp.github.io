@@ -1,5 +1,6 @@
 ---
-title: "Introduction à C++ et Rcpp"
+title: "Developping R packages with C++"
+subtitle: "A beginner guide"
 author: "Hervé Perdry"
 date: '`r Sys.Date()`'
 output:
@@ -46,18 +47,29 @@ hook2 <- function(x){ gsub("```\n+```\n", "", x) }
 knitr::knit_hooks$set(document = hook2)
 ```
 
-# À propos de ce document {-}
+# About this document {-}
 
-Ce document est issu d'un cours d'école doctorale donné en février/mars 2019.
-Un effort a été fait pour le rendre lisible sans les commentaires fait en cours,
-mais il y a certainement toujours des lacunes.
+This document assumes that the reader is familiar with R; no previous
+knowledge of C++ is assumed.
 
-Les exemples de code proposés utilisent souvent le standard C++11. Pour
-pouvoir compiler avec ce standard, utilisez `Sys.setenv("PKG_CXXFLAGS" = "-std=c++11")`.
+The first chapter
+presents rapidly the main data structures used in R (vectors, matrix, factors,
+list, data frames), showing in particular how 
+
+The second chapter presents the very bases of C++ and RCpp. In this chapter you will
+use the function `Rcpp::sourceCpp` to compile C++ code from R. All the example
+code is available on github.
+
+The third chapter shows how to create a R package. The resulting package can be installed
+from github. 
+
+After that, every chapter is associated to a package that you can install to test
+directly the code in it.
 
 Les comparaisons de temps d'exécution qui apparaissent ici ont été obtenues avec
 une installation de R « standard » (pas de librairie comme openBlas ou autre),
-une compilation avec `clang++`, sur une machine linux disposant de 8 cœurs à 3.60 GHz, avec un cache de 8 MB. Des comparaisons avec d'autres compilateurs ou sur d'autres
+une compilation avec `clang++`, sur une machine linux disposant de 8 cœurs à 3.60 GHz, 
+avec un cache de 8 MB. Des comparaisons avec d'autres compilateurs ou sur d'autres
 machines peuvent donner des résultats (très) différents, tant en valeur des temps
 d'exécution qu'en comparaison des performances.
 
@@ -69,11 +81,23 @@ le plus court et plus amène `A tour of C++` du même auteur.
 
 `r if(knitr:::pandoc_to() == "html") "Une version pdf de ce document est également <a href = 'intro_cpp.pdf'>disponible ici</a>"`
 
-```{r child=c("01-intro.Rmd", "02-bases.Rmd", "03-manipuler.Rmd", "04-sucre.Rmd"), }
+```{r child="01-intro.Rmd"}
 ```
 
-```{r child=c("05-Metropolis.Rmd", "06-moreCpp.Rmd", "07-stdlib.Rmd")}
+```{r child="02-bases.Rmd"}
 ```
 
-```{r child=c("08-packages.Rmd", "09-strings.Rmd")}
+```{r child="03-manipuler.Rmd"}
 ```
+
+---
+#```{r child=c("01-intro.Rmd", "02-bases.Rmd", "03-manipuler.Rmd", "04-sucre.Rmd"), }
+#```
+#
+#```{r child=c("05-Metropolis.Rmd", "06-moreCpp.Rmd", "07-stdlib.Rmd")}
+#```
+#
+#```{r child=c("08-packages.Rmd", "09-strings.Rmd")}
+#```
+---
+

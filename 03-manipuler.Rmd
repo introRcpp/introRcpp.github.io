@@ -1,5 +1,10 @@
 # Manipuler les objets de R en C++
 
+All the examples are in the R package...
+
+```{R}
+library(manipulation)
+```
 
 ## Premiers objets Rcpp : les vecteurs
 
@@ -12,7 +17,7 @@ L'initialisation avec la syntaxe utilisée dans `vec0` remplit le vecteur de 0.
 Notez l'accès aux éléments d'un vecteur par l'opérateur `[]`; **contrairement
 à la convention utilisée par R, les vecteurs sont numérotés de 0 à n-1.** 
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 // Création d'un vecteur (initialisé à 0)
 // [[Rcpp::export]]
@@ -34,10 +39,10 @@ Rcpp::IntegerVector vec1(int n) {
 
 ### Exemple : compter les zéros
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 //[[Rcpp::export]]
-int count_zeroes(Rcpp::IntegerVector x) {
+int countZeroes(Rcpp::IntegerVector x) {
   int re = 0; 
   // x.size() et x.length() renvoient la taille de x
   int n = x.size();
@@ -52,10 +57,10 @@ Comment les performances de cette fonction se comparent-elles avec le code R `su
 
 ```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
 set.seed(1); a <- sample(0:99, 1e6, TRUE)
-count_zeroes(a);
+countZeroes(a);
 sum(a == 0)
 
-mbm <- microbenchmark::microbenchmark( R = sum(a == 0), Cpp = count_zeroes(a)) 
+mbm <- microbenchmark::microbenchmark( R = sum(a == 0), Cpp = countZeroes(a)) 
 mbm
 ggplot2::autoplot(mbm)
 ```
@@ -68,6 +73,8 @@ en mémoire, ce qui ralentit l'exécution.
 
 ## Vecteurs
 
+### Creating vectors 
+
 On a vu l'initialisation avec la syntaxe `NumericVector R(n)` qui crée
 un vecteur de longueur $n$, rempli de $0$. On peut utiliser `NumericVector R(n, 1.0)`
 pour un vecteur rempli de $1$ ; **attention à bien taper `1.0` pour avoir un 
@@ -77,26 +84,20 @@ difficilement compréhensible à la compilation**.
 On peut utiliser `NumericVector R = no_init(n);` pour un vecteur non
 initialisé (ce qui fait gagner du temps d'exécution).
 
-```{Rcpp}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
+```{Rcpp eval = FALSE}
 IntegerVector zeros(int n) {
   IntegerVector R(n);
   return R;
 }
-//[[Rcpp::export]]
 IntegerVector whatever(int n, int a) {
   IntegerVector R(n, a);
   return R;
 }
-//[[Rcpp::export]]
 IntegerVector uninitialized(int n) {
   IntegerVector R = no_init(n);
   return R;
 }
-//[[Rcpp::export]]
-IntegerVector nombres_fetiches() {
+IntegerVector favourites() {
   IntegerVector R = IntegerVector::create(1, 4, 8);
   return R;
 }
@@ -106,7 +107,7 @@ IntegerVector nombres_fetiches() {
 zeros(5)
 whatever(5, 2L)
 uninitialized(5) # sometime 0s, not always
-nombres_fetiches()
+favourites()
 ```
 
 Comparons les performances des trois premières fonctions (comme
@@ -119,16 +120,21 @@ mbm
 ggplot2::autoplot(mbm)
 ```
 
-### Gestions des valeurs manquantes
+### Accessing elements
+
+Using `x.size()` or `x.length()`.
+Beware O-based indices.
+
+BLA BLA
+
+### Missing data
 
 Cette fonction utilise `IntegerVector::is_na` qui est la bonne manière de 
 tester si un membre d'un vecteur entier est `NA`.
 
-```{Rcpp}
-#include <Rcpp.h>
-using namespace Rcpp;
-// [[Rcpp::export]]
-int count_NAs(NumericVector x) {
+
+```{Rcpp eval = FALSE}
+int countNAs(NumericVector x) {
   int re = 0;
   int n = x.size();
   for(int i = 0; i < n; i++) {
@@ -136,8 +142,8 @@ int count_NAs(NumericVector x) {
   }
   return(re);
 }
-// [[Rcpp::export]]
-NumericVector extrait_non_NAs(NumericVector x) {
+
+NumericVector getNonNAs(NumericVector x) {
   int nb_nas = count_NAs(x);
   int n = x.size();
   NumericVector R(n - nb_nas);
@@ -155,12 +161,10 @@ Comparons ces deux fonctions avec leurs analogues R, `sum(is.na(x))` et `x[!is.n
 
 ```{r prompt = TRUE, comment = NA, fig.width = 5, fig.height = 2, fig.align = 'center', message = FALSE, cache = TRUE}
 x <- sample( c(NA, rnorm(10)), 1e6, TRUE)
-mbm <- microbenchmark::microbenchmark( sum(is.na(x)), count_NAs(x), x[!is.na(x)], extrait_non_NAs(x) )
+mbm <- microbenchmark::microbenchmark( sum(is.na(x)), countNAs(x), x[!is.na(x)], getNonNAs(x) )
 mbm
 ggplot2::autoplot(mbm)
 ```
-
-
  
 
 ## Vecteurs nommés
@@ -172,11 +176,11 @@ et les data frames.
 ### Créer des vecteurs nommés 
 Voici d'abord comment créer un vecteur nommé.
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]]
-NumericVector creer1() {
+NumericVector createVec1() {
   NumericVector x = NumericVector::create(Named("un") = 10, Named("deux") = 20);
   return x;
 }
@@ -184,17 +188,17 @@ NumericVector creer1() {
 
 Application :
 ```{r prompt = TRUE, comment = NA}
-a <- creer1()
+a <- createVec1()
 a
 ```
 
 Une syntaxe plus dense est possible :
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]]
-NumericVector creer2() {
+NumericVector createVec2() {
   NumericVector x = NumericVector::create(_["un"] = 10, _["deux"] = 20);
  return x;
 }
@@ -203,18 +207,42 @@ NumericVector creer2() {
 Cela produit le même résultat.
 
 ```{r prompt = TRUE, comment = NA}
-creer2()
+createVec2()
 ```
+
+### Accéder aux éléments par leurs noms
+
+On utilise toujours la syntaxe `x[]` :
+
+```{Rcpp eval = FALSE}
+#include <Rcpp.h>
+using namespace Rcpp;
+//[[Rcpp::export]]
+double getOne(NumericVector x) {
+  if(x.containsElementNamed("one"))
+    return x["one"];
+  else 
+    stop("No element 'one'");
+}
+```
+
+Notez la fonction `Rcpp::stop` qui correspond à la fonction R du même nom.
+
+```{r prompt = TRUE, comment = NA, error = TRUE}
+getOne(a)
+getOne(b)
+```
+
 
 ### Obtenir les noms d'un vecteur 
 
 Et voici comment obtenir les noms d'un vecteur.
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]]
-CharacterVector noms(NumericVector x) {
+CharacterVector names1(NumericVector x) {
   CharacterVector R = x.names(); // ou R = x.attr("names");
   return R;
 }
@@ -222,70 +250,22 @@ CharacterVector noms(NumericVector x) {
 
 Utilisons cette fonction:
 ```{r prompt = TRUE, comment = NA, error = TRUE}
-noms(a)
-b <- seq(0,1,length=6)
-noms(b)
+names1(a)
 ```
 
-Bien sûr, le vecteur `b` n'a pas de noms ; la fonction `x.names()` a renvoyé 
-l'objet `NULL`, de type `NILSXP`, qui ne peut être utilisé pour 
-initialiser le vecteur `R` de type `STRSXP`.
-La solution est d'attraper le
-résultat de `x.names()` dans un `SEXP`, et de tester son type
-avec `TYPEOF`.
-
-```{Rcpp}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-CharacterVector noms2(NumericVector x) {
-  SEXP R = x.names();
-  if( TYPEOF(R) == STRSXP )
-    return R;
-  else 
-    return CharacterVector(0);
-}
-```
-
-```{r prompt = TRUE, comment = NA, error = TRUE}
-noms2(a)
-noms2(b)
-```
-
-### Accéder aux éléments par leurs noms
-
-On utilise toujours la syntaxe `x[]` :
-
-```{Rcpp}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-double get_un(NumericVector x) {
-  if(x.containsElementNamed("un"))
-    return x["un"];
-  else 
-    stop("Pas d'élément 'un'");
-}
-```
-
-Notez la fonction `Rcpp::stop` qui correspond à la fonction R du même nom.
-
-```{r prompt = TRUE, comment = NA, error = TRUE}
-get_un(a)
-get_un(b)
-```
-
+Cette fonction semble se comporter correctement, elle a cependant un gros
+défaut. Nous y reviendrons dans la section suivante.
 
 ## Objets génériques : SEXP
 
 Les objets R les plus génériques sont les `SEXP`, « S expression ». Les principaux types de `SEXP`
 sont illustrés par la fonction suivante.
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]]
-std::string le_type(SEXP x) {
+std::string RType(SEXP x) {
   switch( TYPEOF(x) ) {
     case INTSXP:
       return "integer";
@@ -304,33 +284,33 @@ std::string le_type(SEXP x) {
   }
 }
 ```
-Ça n'est généralement pas une bonne idée d'écrire des fonctions génériques
-comme celle-ci. Utiliser les types définis par Rcpp est généralement plus
+
+Utiliser les types définis par Rcpp est généralement plus
 facile et plus sûr. Cependant à l'intérieur des fonctions Rcpp ils peuvent 
 être utiles, par exemple dans le cas où une fonction peut renvoyer des objets
 de types différents, par exemple soit un `NILSXP`, soit un objet d'un autre type.
 
 ### Exemple : vecteurs nommés (ou pas)
 
-Testons à nouveau la fonction `noms`, en lui passant un vecteur non nommé.
+Testons à nouveau la fonction `names1`, en lui passant un vecteur non nommé.
 
 ```{r prompt = TRUE, comment = NA, error = TRUE}
 b <- seq(0,1,length=6)
-noms(b)
+names1(b)
 ```
 
-La fonction `x.names()` a renvoyé 
+Bien sûr, le vecteur `b` n'a pas de noms ; la fonction `x.names()` a renvoyé 
 l'objet `NULL`, de type `NILSXP`, qui ne peut être utilisé pour 
 initialiser le vecteur `R` de type `STRSXP`.
-La solution est d'attraper le
+Une solution est d'attraper le
 résultat de `x.names()` dans un `SEXP`, et de tester son type
 avec `TYPEOF`.
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]]
-CharacterVector noms2(NumericVector x) {
+CharacterVector names2(NumericVector x) {
   SEXP R = x.names();
   if( TYPEOF(R) == STRSXP )
     return R;
@@ -340,10 +320,9 @@ CharacterVector noms2(NumericVector x) {
 ```
 
 ```{r prompt = TRUE, comment = NA, error = TRUE}
-noms2(a)
-noms2(b)
+names2(a)
+names2(b)
 ```
-
 
 
 ### Exemple : énumerer les noms et le contenu
@@ -353,14 +332,14 @@ d'un `CharacterVector`, renvoie une valeur de type `const char *`
 c'est-à-dire un pointeur vers une chaîne de caractère (constante,
 ie non modifiable) « à la C » (voir chapitre dédié).
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]] 
-void enumere(NumericVector x) {
+void enumerate(NumericVector x) {
   SEXP r0 = x.names();
   if(TYPEOF(r0) != STRSXP) {
-    Rcout << "Pas de noms\n";
+    Rcout << "No names\n";
     return;
   }
   CharacterVector R(r0);
@@ -372,43 +351,42 @@ void enumere(NumericVector x) {
 ```
 
 ```{r prompt = TRUE, comment = NA}
-enumere(a)
+enumerate(a)
 ```
-
 
 ## Facteurs
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
-//[[Rcpp::export]] 
-CharacterVector niveaux(IntegerVector x) {
+//[[Rcpp::export]]
+CharacterVector getLevels(IntegerVector x) {
   SEXP R = x.attr("levels");
   switch(TYPEOF(R)) {
   case STRSXP:
     return R; // Rcpp prend soin que ce SEXP soit converti en CharacterVector
   case NILSXP:
-    stop("Pas d'attribut 'levels'");
+    stop("No 'levels' attribute");
   default:
-    stop("Attribut 'levels' de type inconvenant");
+    stop("'levels' attribute of unexpected type");
   }
 }
 ```
 
 ```{r prompt = TRUE, comment = NA}
 x <- factor( sample(c("M","F"), 10, TRUE) )
-niveaux(x)
+getLevels(x)
 x <- sample(1:2, 10, TRUE)
-# niveaux(x)
+# getLevels(x)
 attr(x, "levels") <- c(0.1, 0.4)
-# niveaux(x)
+# getLevels(x)
 ```
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]]
-IntegerVector un_facteur() {
+IntegerVector someFactor() {
   IntegerVector x = IntegerVector::create(1,1,2,1);
   x.attr("levels") = CharacterVector::create("F", "M");
   x.attr("class") = CharacterVector::create("factor");
@@ -417,7 +395,7 @@ IntegerVector un_facteur() {
 ```
 
 ```{r prompt = TRUE, comment = NA}
-un_facteur()
+someFactor()
 ```
 
 ## Listes et Data frames
@@ -429,28 +407,28 @@ La fonction suivante prend une liste `L` qui a un élément `L$alpha` de type `N
 et renvoie celui-ci à l'utilisateur. En cas de problème un message d'erreur informatif
 est émis.
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]]
-NumericVector get_alpha_list(List x) {
+NumericVector getAlpha(List x) {
   if( x.containsElementNamed("alpha") ) {
     SEXP R = x["alpha"];
     if( TYPEOF(R) != REALSXP )
-      stop("elt alpha n'est pas un 'NumericVector'");
+      stop("alpha is not of type 'NumericVector'");
     return R;
   } else 
-    stop("Pas d'elt alpha");
+    stop("No element named alpha");
 }
 ```
 
 Pour renvoyer des valeurs hétéroclites dans une liste c'est très facile:
 
-```{Rcpp}
+```{Rcpp eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 //[[Rcpp::export]]
-List cree_liste() {
+List createList() {
   List L;
   L["a"] = NumericVector::create(1.0, 2.0, 4.0);
   L["b"] = 12;
@@ -464,3 +442,21 @@ En Rcpp cela fonctionne de la même façon, avec la classe `DataFrame`.
 Ils ont une certaine tendance à se transformer en liste quand on leur ajoute des
 éléments : il suffit la plupart de transformer le résultat en liste (avec `as.data.frame`)
 une fois qu'on l'a obtenu.
+
+Here is the trick.
+
+```{Rcpp eval = FALSE}
+#include <Rcpp.h>
+using namespace Rcpp;
+//[[Rcpp::export]]
+DataFrame createDF() {
+  List L;
+  L["a"] = NumericVector::create(1.0, 2.0, 4.0);
+  L["b"] = CharacterVector::create("alpha", "beta", "gamma");
+  L["c"] = rnorm(3, 0.0, 1.0);
+
+  L.attr("class") = "data.frame";
+  L.attr("row.names") = IntegerVector::create(NA_INTEGER, -3);
+  return L;
+}
+```
