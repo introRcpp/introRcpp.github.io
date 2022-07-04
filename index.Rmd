@@ -84,7 +84,8 @@ le plus court et plus amène `A tour of C++` du même auteur.
 ```{r child="01-intro.Rmd"}
 ```
 
-```{r child="02-bases.Rmd"}
+```{r} 
+# child="02-bases.Rmd"}
 ```
 
 ```{r child="03-manipuler.Rmd"}

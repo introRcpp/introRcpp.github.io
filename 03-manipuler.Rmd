@@ -1,3 +1,8 @@
+```{R echo = FALSE, warnings = FALSE}
+source("include.cpp.r")
+includeCppPath <- "manipulation/src/"
+```
+
 # Manipuler les objets de R en C++
 
 All the examples are in the R package...
@@ -17,40 +22,16 @@ L'initialisation avec la syntaxe utilisée dans `vec0` remplit le vecteur de 0.
 Notez l'accès aux éléments d'un vecteur par l'opérateur `[]`; **contrairement
 à la convention utilisée par R, les vecteurs sont numérotés de 0 à n-1.** 
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-// Création d'un vecteur (initialisé à 0)
-// [[Rcpp::export]]
-Rcpp::NumericVector vec0(int n) {
-  Rcpp::NumericVector x(n);
-  return x;
-}
-
-// accès aux éléments
-// [[Rcpp::export]]
-Rcpp::IntegerVector vec1(int n) {
-  Rcpp::IntegerVector x(n);
-  for(int i = 0; i < n; i++) {
-    x[i] = i*i;
-  }
-  return x;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("vec.cpp")
 ```
+
 
 ### Exemple : compter les zéros
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-//[[Rcpp::export]]
-int countZeroes(Rcpp::IntegerVector x) {
-  int re = 0; 
-  // x.size() et x.length() renvoient la taille de x
-  int n = x.size();
-  for(int i = 0; i < n; i++) {
-    if(x[i] == 0) ++re;
-  }
-  return re;
-}
+
+```{R echo = FALSE, results = "asis"}
+include.cpp("countZeroes.cpp")
 ```
 
 Comment les performances de cette fonction se comparent-elles avec le code R `sum(a == 0)` ?
@@ -84,23 +65,12 @@ difficilement compréhensible à la compilation**.
 On peut utiliser `NumericVector R = no_init(n);` pour un vecteur non
 initialisé (ce qui fait gagner du temps d'exécution).
 
-```{Rcpp eval = FALSE}
-IntegerVector zeros(int n) {
-  IntegerVector R(n);
-  return R;
-}
-IntegerVector whatever(int n, int a) {
-  IntegerVector R(n, a);
-  return R;
-}
-IntegerVector uninitialized(int n) {
-  IntegerVector R = no_init(n);
-  return R;
-}
-IntegerVector favourites() {
-  IntegerVector R = IntegerVector::create(1, 4, 8);
-  return R;
-}
+
+```{R echo = FALSE, results = "asis"}
+include.cpp("zeros.cpp")
+include.cpp("whatever.cpp")
+include.cpp("uninitialized.cpp")
+include.cpp("favourites.cpp")
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -133,29 +103,17 @@ Cette fonction utilise `IntegerVector::is_na` qui est la bonne manière de
 tester si un membre d'un vecteur entier est `NA`.
 
 
-```{Rcpp eval = FALSE}
-int countNAs(NumericVector x) {
-  int re = 0;
-  int n = x.size();
-  for(int i = 0; i < n; i++) {
-    re += NumericVector::is_na(x[i]);
-  }
-  return(re);
-}
-
-NumericVector getNonNAs(NumericVector x) {
-  int nb_nas = count_NAs(x);
-  int n = x.size();
-  NumericVector R(n - nb_nas);
-  int j = 0;
-  for(int i = 0; i < n; i++) {
-    if(!NumericVector::is_na(x[i])) {
-      R[j++] = x[i];
-    }
-  }
-  return R;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("countNAs.cpp")
 ```
+
+Une nouveauté : le fichier `countNAS.h` ...
+
+```{R echo = FALSE, results = "asis"}
+include.cpp("countNAs.h")
+include.cpp("getNonNAs.cpp")
+```
+
 
 Comparons ces deux fonctions avec leurs analogues R, `sum(is.na(x))` et `x[!is.na(x)]`.
 
@@ -176,14 +134,8 @@ et les data frames.
 ### Créer des vecteurs nommés 
 Voici d'abord comment créer un vecteur nommé.
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-NumericVector createVec1() {
-  NumericVector x = NumericVector::create(Named("un") = 10, Named("deux") = 20);
-  return x;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("createVec1.cpp")
 ```
 
 Application :
@@ -194,14 +146,8 @@ a
 
 Une syntaxe plus dense est possible :
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-NumericVector createVec2() {
-  NumericVector x = NumericVector::create(_["un"] = 10, _["deux"] = 20);
- return x;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("createVec2.cpp")
 ```
 
 Cela produit le même résultat.
@@ -214,16 +160,8 @@ createVec2()
 
 On utilise toujours la syntaxe `x[]` :
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-double getOne(NumericVector x) {
-  if(x.containsElementNamed("one"))
-    return x["one"];
-  else 
-    stop("No element 'one'");
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("getOne.cpp")
 ```
 
 Notez la fonction `Rcpp::stop` qui correspond à la fonction R du même nom.
@@ -238,14 +176,8 @@ getOne(b)
 
 Et voici comment obtenir les noms d'un vecteur.
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-CharacterVector names1(NumericVector x) {
-  CharacterVector R = x.names(); // ou R = x.attr("names");
-  return R;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("names1.cpp")
 ```
 
 Utilisons cette fonction:
@@ -261,28 +193,8 @@ défaut. Nous y reviendrons dans la section suivante.
 Les objets R les plus génériques sont les `SEXP`, « S expression ». Les principaux types de `SEXP`
 sont illustrés par la fonction suivante.
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-std::string RType(SEXP x) {
-  switch( TYPEOF(x) ) {
-    case INTSXP:
-      return "integer";
-    case REALSXP:
-      return "double";
-    case LGLSXP:
-      return "logical";
-    case STRSXP:
-      return "character";
-    case VECSXP:
-      return "list";
-    case NILSXP:
-      return "NULL";
-    default:
-      return "autre";
-  }
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("RType.cpp")
 ```
 
 Utiliser les types définis par Rcpp est généralement plus
@@ -306,17 +218,8 @@ Une solution est d'attraper le
 résultat de `x.names()` dans un `SEXP`, et de tester son type
 avec `TYPEOF`.
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-CharacterVector names2(NumericVector x) {
-  SEXP R = x.names();
-  if( TYPEOF(R) == STRSXP )
-    return R;
-  else 
-    return CharacterVector(0);
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("names2.cpp")
 ```
 
 ```{r prompt = TRUE, comment = NA, error = TRUE}
@@ -332,22 +235,8 @@ d'un `CharacterVector`, renvoie une valeur de type `const char *`
 c'est-à-dire un pointeur vers une chaîne de caractère (constante,
 ie non modifiable) « à la C » (voir chapitre dédié).
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]] 
-void enumerate(NumericVector x) {
-  SEXP r0 = x.names();
-  if(TYPEOF(r0) != STRSXP) {
-    Rcout << "No names\n";
-    return;
-  }
-  CharacterVector R(r0);
-  for(int i = 0; i < R.size(); i++) {
-    double a = x[ CHAR(R[i]) ];
-    Rcout << CHAR(R[i]) << " : " << a << "\n";
-  }
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("enumerate.cpp")
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -356,21 +245,8 @@ enumerate(a)
 
 ## Facteurs
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-CharacterVector getLevels(IntegerVector x) {
-  SEXP R = x.attr("levels");
-  switch(TYPEOF(R)) {
-  case STRSXP:
-    return R; // Rcpp prend soin que ce SEXP soit converti en CharacterVector
-  case NILSXP:
-    stop("No 'levels' attribute");
-  default:
-    stop("'levels' attribute of unexpected type");
-  }
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("getLevels.cpp")
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -382,16 +258,8 @@ attr(x, "levels") <- c(0.1, 0.4)
 # getLevels(x)
 ```
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-IntegerVector someFactor() {
-  IntegerVector x = IntegerVector::create(1,1,2,1);
-  x.attr("levels") = CharacterVector::create("F", "M");
-  x.attr("class") = CharacterVector::create("factor");
-  return x;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("someFactor.cpp")
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -407,56 +275,31 @@ La fonction suivante prend une liste `L` qui a un élément `L$alpha` de type `N
 et renvoie celui-ci à l'utilisateur. En cas de problème un message d'erreur informatif
 est émis.
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-NumericVector getAlpha(List x) {
-  if( x.containsElementNamed("alpha") ) {
-    SEXP R = x["alpha"];
-    if( TYPEOF(R) != REALSXP )
-      stop("alpha is not of type 'NumericVector'");
-    return R;
-  } else 
-    stop("No element named alpha");
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("getAlpha.cpp")
 ```
 
 Pour renvoyer des valeurs hétéroclites dans une liste c'est très facile:
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-List createList() {
-  List L;
-  L["a"] = NumericVector::create(1.0, 2.0, 4.0);
-  L["b"] = 12;
-  L["c"] = rnorm(4, 0.0, 1.0);
-  return L;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("createList.cpp")
+```
+```{r prompt = TRUE, comment = NA}
+createList()
 ```
 
 Les data frames, ont l'a vu, sont des listes avec quelques attributs supplémentaires.
 En Rcpp cela fonctionne de la même façon, avec la classe `DataFrame`.
 Ils ont une certaine tendance à se transformer en liste quand on leur ajoute des
-éléments : il suffit la plupart de transformer le résultat en liste (avec `as.data.frame`)
-une fois qu'on l'a obtenu.
+éléments.
 
-Here is the trick.
+Here is a useful trick.
 
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-DataFrame createDF() {
-  List L;
-  L["a"] = NumericVector::create(1.0, 2.0, 4.0);
-  L["b"] = CharacterVector::create("alpha", "beta", "gamma");
-  L["c"] = rnorm(3, 0.0, 1.0);
 
-  L.attr("class") = "data.frame";
-  L.attr("row.names") = IntegerVector::create(NA_INTEGER, -3);
-  return L;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp("createDF.cpp")
 ```
+```{r prompt = TRUE, comment = NA}
+createDF()
+```
+
