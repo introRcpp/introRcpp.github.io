@@ -1,14 +1,20 @@
 ```{R echo = FALSE, warnings = FALSE}
 source("include.cpp.r")
-includeCppPath <- "manipulation/src/"
+includeCppPath <- "../introRcppManipulation/src/"
 ```
 
 # Manipuler les objets de R en C++
 
 All the examples are in the R package...
+Install it with
 
+```{R eval = FALSE, prompt = TRUE}
+devtools::install_github("introRcpp/introRcppManipulation")
+```
+
+Load it with
 ```{R}
-library(manipulation)
+library(introRcppManipulation)
 ```
 
 ## Premiers objets Rcpp : les vecteurs

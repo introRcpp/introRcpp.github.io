@@ -1,10 +1,18 @@
+
+
+
+```{R echo = FALSE, warnings = FALSE}
+source("include.cpp.r")
+includeCppPath <- "../introRcppBases/src/"
+library(introRcppBases)
+```
 # Introducting C++
 
 Types (integer, floats, bool), arrays, and flow control statements.
 
 ## Using `Rcpp::sourceCpp`
 
-If you are using linux, install R, Rstudio and the Rcpp package (use `install.packages("Rcpp")\), as well as a C++
+If you are using linux, install R, Rstudio and the Rcpp package (use `install.packages("Rcpp")`), as well as a C++
 compiler such as `g++`.
 
 If you are using Windows or macOS, install R, Rstudio, the Rcpp package, and Rtools. 
@@ -25,15 +33,14 @@ will enable C++11 compilation once for all.
 
 ## Hello world
 
+```{R echo = FALSE, results = "asis"}
+include.cpp("vec.cpp")
+```
+
 Il faut toujours commencer par saluer le monde. Créez un fichier `hello.cpp` contenant le code suivant :
 
-```{Rcpp}
-#include <Rcpp.h>
-#include <iostream>
-//[[Rcpp::export]]
-void hello() {
-  Rcpp::Rcout << "Hello world!\n";
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('hello.cpp')
 ```
 
 Compilez le depuis R (il faut avoir installé le package Rcpp) :
@@ -105,23 +112,8 @@ Compilez ce programme qui affiche la taille (en octets) des quatre types d'entie
 (le résultat peut théoriquement varier d'une architecture à l'autre, c'est-à-dire
 qu'il n'est pas fixé par la description officielle du C++).
 
-```{Rcpp}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-void int_types() {
-  char a;
-  short b;
-  int c;
-  long int d;
-  int64_t e;
-
-  Rcout << "sizeof(a) = " << sizeof(a) << "\n";
-  Rcout << "sizeof(b) = " << sizeof(b) << "\n";
-  Rcout << "sizeof(c) = " << sizeof(c) << "\n";
-  Rcout << "sizeof(d) = " << sizeof(d) << "\n";
-  Rcout << "sizeof(e) = " << sizeof(e) << "\n";
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('int_types.cpp')
 ```
 
 Notez une nouveauté ci-dessus : la directive `using namespace Rcpp` qui permet de taper
@@ -148,21 +140,8 @@ Il existe aussi des types non signés, par exemple `unsigned int` ou `unsigned c
 et des raccourcis variés, par exemple `size_t` pour `unsigned long int` ou `uint16_t`
 pour des entiers non signées de 8 bits.
 
-```{Rcpp}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-void non_signes() {
-  int16_t x = 32766;
-  uint16_t y = 32766;
-  Rcout << "x = " << x << ", y = " << y << "\n";
-  x = x+1; y = y+1;
-  Rcout << "x = " << x << ", y = " << y << "\n";
-  x = x+1; y = y+1;
-  Rcout << "x = " << x << ", y = " << y << "\n";
-  x = x+1; y = y+1;
-  Rcout << "x = " << x << ", y = " << y << "\n";
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('non_signes.cpp')
 ```
 Sur 16 bits, les entiers non signés vont de -32768 à 32767, et les entiers signés de 0 à 65535:
 
@@ -173,18 +152,8 @@ non_signes()
 
 ### Numerical overflow
 
-```{Rcpp}
-#include <Rcpp.h>
-using namespace Rcpp;
-//[[Rcpp::export]]
-void overflow() {
-  unsigned short x(65530);
-  Rcout << "x = " << x << "\n" ;
-  x = x+5;
-  Rcout << "x = " << x << "\n" ;
-  x = x+5;
-  Rcout << "x = " << x << "\n" ;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('overflow.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -196,11 +165,8 @@ overflow()
 Écrivons notre première fonction qui renvoie une valeur. Son type doit être déclaré
 comme ceci :
 
-```{Rcpp}
-//[[Rcpp::export]]
-int somme_entiers(int a, int b) {
-  return a+b;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('somme_entiers.cpp')
 ```
 
 Et testons la :
@@ -211,23 +177,16 @@ somme_entiers(1.9,3.6)
 
 Que se passe-t-il ? Utilisez la fonction suivante pour comprendre.
 
-```{Rcpp}
-//[[Rcpp::export]]
-int cast_to_int(int x) {
-  return x;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('cast_to_int.cpp')
 ```
 
 ### Initialisation des variables
 
 Il est nécessaire d'initialiser les variables.
 
-```{Rcpp}
-//[[Rcpp::export]]
-int uninit() {
-  int a; // a peut contenir n'importe quoi
-  return a;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('uninit.cpp')
 ```
 
 Testons :
@@ -245,17 +204,8 @@ Il y a trois types de nombres en format flottant. Le type utilisé par R est le 
 
 ### The free types of floating point numbers
 
-```{Rcpp}
-#include <Rcpp.h>
-//[[Rcpp::export]]
-void float_types() {
-  float a;
-  double b;
-  long double c;
-  Rcpp::Rcout << "sizeof(a) = " << sizeof(a) << "\n";
-  Rcpp::Rcout << "sizeof(b) = " << sizeof(b) << "\n";
-  Rcpp::Rcout << "sizeof(c) = " << sizeof(c) << "\n";
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('float_types.cpp')
 ```
 
 ### Précision du calcul 
@@ -296,14 +246,8 @@ pryr::bits(0.2)
 Il y a des valeurs spéciales en C++ comme en R : une valeur infinie, et une valeur non-définie 
 `NaN`, pour *not a number.* 
 
-```{Rcpp}
-#include <Rcpp.h>
-//[[Rcpp::export]]
-double divise(double a, double b) {
-  double r = a/b;
-  Rcpp::Rcout << a << " / " << b << " = " << r << std::endl;
-  return r;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('divise.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -316,20 +260,8 @@ divise(0,0)
 En C++, la fonction `numeric_limits` permet d'obtenir les valeurs
 extrêmes que peuvent prendre les `double`.
 
-```{Rcpp}
-#include <Rcpp.h>
-//[[Rcpp::export]]
-void numeric_limits() {
-  Rcpp::Rcout 
-    << "plus petite valeur positive 'normale' = " 
-    << std::numeric_limits<double>::min()         << "\n"
-    << "plus petite valeur positive           = " 
-    << std::numeric_limits<double>::denorm_min()  << "\n"
-    << "plus grande valeur                    = " 
-    << std::numeric_limits<double>::max() << "\n"
-    << "epsilon                               = " 
-    << std::numeric_limits<double>::epsilon()     << "\n";
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('numeric_limits.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -348,14 +280,8 @@ cependant le compilateur fera la conversion de type si nécessaire.
 Les opérateurs arithmétiques sont bien entendu `+`, `-`, `*` et `/`. Pour les entiers,
 le modulo est `%`. 
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void division_entiere(int a, int b) {
-  int q = a / b; 
-  int r = a % b;
-  Rcpp::Rcout << a << " = " << b << " * " << q << " + " << r << std::endl;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('division_entiere.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -367,26 +293,8 @@ division_entiere(128, 7)
 à `x = x + 4`, et ainsi de suite. Il y a aussi les opérateurs d'incrémentation `++`
 et de décrémentation `--`.
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void operateurs_exotiques(int a) {
-  Rcpp::Rcout << "a = " << a << std::endl;
-
-  Rcpp::Rcout << "a *= 2;" << std::endl;
-  a *= 2;
-  Rcpp::Rcout << "a = " << a << std::endl;
-
-  Rcpp::Rcout << "int b = a++;" << std::endl;
-  int b = a++; // post incrementation
-  Rcpp::Rcout << "b = " << b << std::endl;
-  Rcpp::Rcout << "a = " << a << std::endl;
-
-  Rcpp::Rcout << "int c = ++a;" << std::endl;
-  int c = ++a; // pre incrementation
-  Rcpp::Rcout << "c = " << c << std::endl;
-  Rcpp::Rcout << "a = " << a << std::endl;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('operateurs_exotiques.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -402,17 +310,8 @@ peut être implicite, lors par exemple d'une copie d'un type `double` vers un ty
 être rendue explicite en mettant un nom de type entre parenthèses devant une variable : `(int) x` 
 fera une conversion de `x` vers le type `int` (si le type de `x` rend ça possible).
 
-```{Rcpp}
-#include <Rcpp.h>
-//[[Rcpp::export]]
-void cast(int x, int y) {
-  double a = x; // cast implicite
-  double b = (double) y; // cast explicite
-  double q1 = x / y; // cast implicite (à quel moment a-t-il lieu ?)
-  double q2 = (double) x / (double) y; // cast explicite
-  Rcpp::Rcout << "q1 = " << q1 << "\n";
-  Rcpp::Rcout << "q2 = " << q2 << "\n";
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('cast.cpp')
 ```
 
 Cet exemle montre les écueils du cast implicite :
@@ -428,11 +327,8 @@ Lors du calcul de `q1`, le cast a été fait après la division entière... éta
 
 Le type `bool` peut prendre les valeurs vrai/faux. Il correspond au type `logical` de R.
 
-```{Rcpp}
-// [[Rcpp::export]]
-bool test_positif(double x) {
-  return (x > 0);
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('test_positif.cpp')
 ```
 
 Les opérateurs de test sont comme en R, `>`, `>=`, `<`, `<=`, `==` et `!=`.
@@ -440,29 +336,16 @@ Les opérateurs logiques sont `&&` (et), `||` (ou) et `!` (non). **Attention !**
 Les opérateurs `&` et `|` existent également, ce sont des opérateurs logiques bit à bit
 qui opèrent sur les entiers. 
 
-```{Rcpp}
-// [[Rcpp::export]]
-bool test_interval(double x, double min, double max) {
-  return (min <= x && x <= max);
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('test_interval.cpp')
 ```
 
 ## Tableaux de taille fixe
 
 On peut définir des tableaux de taille fixe fixe (connue à la compilation) ainsi:
 
-```{Rcpp}
-#include <Rcpp.h>
-#define SHOW(x) Rcpp::Rcout << #x << " = " << (x) << std::endl;
-//[[Rcpp::export]]
-void petit_tableau() {
-  int a[4] = {0,2,7,11};
-  SHOW(a)    // wut ?
-  SHOW(a[0])
-  SHOW(a[1])
-  SHOW(a[2])
-  SHOW(a[3])
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('petit_tableau.cpp')
 ```
 
 L'occasion est saisie pour montrer l'utilisation d'une macro. La ligne
@@ -484,14 +367,8 @@ Le résultat de `SHOW(a)` sera expliqué plus tard (pointeurs).
 
 Plus de 90\% des boucles `for` s'écrivent ainsi :
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void ze_loop(int n) {
-  for(int i = 0; i < n; i++) {
-    Rcpp::Rcout << "i = " << i << std::endl;
-  }
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('ze_loop.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -508,14 +385,8 @@ variable.
 
 Il est facile par exemple d'aller de 2 en 2 :
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void bouclette(int n) {
-  for(int i = 0; i < n; i += 2) {
-    Rcpp::Rcout << "i = " << i << std::endl;
-  }
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('bouclette.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -524,16 +395,8 @@ bouclette(6)
 
 Pour revenir sur les types d'entiers : gare au dépassement arithmétique.
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void arithmetic_overflow() {
-  int x = 1;
-  for(int i = 0; i < 33; i++) {
-    Rcpp::Rcout << "2^" << i << " = " << (x) << "\n";
-    x = 2*x;
-  }
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('arithmetic_overflow.cpp')
 ```
 
 Essayer avec `unsigned int`, `long int`.
@@ -541,18 +404,8 @@ Essayer avec `unsigned int`, `long int`.
 ### `continue` et `break`
 
 Une instruction `continue` en cours de boucle fait passer au tour suivant :
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void trois(int n) {
-  for(int i = 1; i <= n; i++) {
-    Rcpp::Rcout << i << " " ;
-    if(i%3 != 0) 
-      continue;
-    Rcpp::Rcout << "\n";
-  }
-  Rcpp::Rcout << "\n";
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('trois.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -561,17 +414,8 @@ trois(9)
 
 Quant à `break`, si s'agit bien sûr d'une interruption de la boucle.
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void zz(int n, int z) {
-  for(int i = 0; i < n; i++) {
-    Rcpp::Rcout << "A" ;
-    if(i > z) 
-      break;
-  }
-  Rcpp::Rcout << std::endl;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('zz.cpp')
 ```
 
 
@@ -587,23 +431,8 @@ Ces boucles ressemblent fort à ce qui existe en R. Dans un
 cas, le test est fait avant la boucle, dans l'autre il est fait
 après.
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void a_rebours_1(int n) {
-  while(n-- > 0) {
-    Rcpp::Rcout << n << " ";
-  }
-  Rcpp::Rcout << std::endl;
-}
-
-// [[Rcpp::export]]
-void a_rebours_2(int n) {
-  do {
-    Rcpp::Rcout << n << " ";
-  } while(n-- > 0);
-  Rcpp::Rcout << std::endl;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('a_rebours_1.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -618,16 +447,8 @@ Considérons un exemple un peu moins artificiel : le calcul d'une racine carrée
 par l'algorithme de Newton. L'avantage de la syntaxe `do while` est apparent
 ici.
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-double racine_carree(double x, double eps = 1e-5) {
-  double s = x;
-  do {
-    s = 0.5*(s + x/s);
-  } while( fabs(s*s - x) > eps);
-  return s;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('racine_carree.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -646,17 +467,8 @@ pour `eps` ? Proposer une modification de la fonction qui évite cet écueil.
 
 Cela fonctionne tout à fait comme en R ; la x
 
-```{Rcpp}
-// [[Rcpp::export]]
-double mini(double x, double y) {
-  double re = 0;
-  if(x > y) {
-    re = y;
-  } else {
-    re = x;
-  }
-  return re;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('mini.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
@@ -667,30 +479,8 @@ mini(22, 355)
 
 Un exemple simple devrait permettre de comprendre le fonctionnement de `switch`.
 
-```{Rcpp}
-#include <Rcpp.h>
-// [[Rcpp::export]]
-void combien(int n) {
-  switch(n) {
-    case 0:
-      Rcpp::Rcout << "aucun\n";
-      break;
-    case 1:
-      Rcpp::Rcout << "un seul\n";
-      break;
-    case 2:
-      Rcpp::Rcout << "deux\n";
-      break;
-    case 3:
-    case 4:
-    case 5:
-      Rcpp::Rcout << "quelques uns\n";
-      break;
-    default:
-      Rcpp::Rcout << "beaucoup\n";
-  }
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('combien.cpp')
 ```
-
 
 
