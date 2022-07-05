@@ -19,7 +19,7 @@ extract.rcpp.chunks <- function(filename, newfile, output.dir = "src/", overwrit
   }
  
   # sauvegarde
-  cnames <- character(length(chunk)) 
+  cnames <- character(length(CHUNKS)) 
   k <- 0
   for(i in seq_along(CHUNKS)) {
     chunk <- CHUNKS[[i]]
