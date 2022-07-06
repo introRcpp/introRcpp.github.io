@@ -1,3 +1,9 @@
+```{R echo = FALSE, warnings = FALSE}
+source("include.cpp.r")
+includeCppPath <- "../introRcppPackages/src/"
+library(introRcppBases) # pour avoir la fonction squareRoot !
+```
+
 # Création d'un package R
 
 Pour diffuser votre travail, ou pour ne pas avoir besoin de recompiler vos
@@ -6,29 +12,29 @@ aide pour cela. Nous allons dans ce chapitre faire les premiers pas dans la
 création d'un package ; le tome du manuel de R intitulé *Writing R extensions*
 reste une référence indispensable.
 
-Le package que nous allons créer s'appelle `milou`. 
-Vous pouvez le retrouver à l'adresse `https://github.com/introRcpp/milou`.
+Le package que nous allons créer s'appelle `introRcppPackages`. 
+Vous pouvez le retrouver à l'adresse `https://github.com/introRcpp/introRcppPackages`.
 
 ## Créer l'arborescence de fichiers
 
 Pour commencer sélectionner le menu `File` l'option `New Project`, puis `New Directory`,
 puis `R package using Rcpp`. Vous allez pouvoir choisir à quel endroit le nouveau
 répertoire qui va contenir votre package (et portera son nom) sera installé. Nous
-choisissons d'appeler notre package `milou`.
+choisissons d'appeler notre package `introRcppPackages`.
 
-Le répertoire `milou/` contient:
+Le répertoire `introRcppPackages/` contient:
 
 * les fichiers `DESCRIPTION` et `NAMESPACE` 
 * les répertoires `R/`, `src/` et `man/` dont nous allons parler plus bas
 * des fichiers qui ne font pas partie du package :
   + un fichier `Read-and-delete-me` (obtempérez)
-  + un fichier `milou.Rproj` et un dossier (caché) `.Rproj.user/` qui sont utilisés par `Rstudio`
+  + un fichier `introRcppPackages.Rproj` et un dossier (caché) `.Rproj.user/` qui sont utilisés par `Rstudio`
   + un fichier `.Rbuilbignore` qui contient des expressions régulières destinées à 
     informer R de la présence de fichiers qui ne font pas partie du package...
 
 Le contenu de `DESCRIPTION` est assez clair -- vous pouvez et devez le modifier:
 ```
-Package: milou
+Package: introRcppPackages
 Type: Package
 Title: What the Package Does in One 'Title Case' Line
 Version: 1.0
@@ -43,7 +49,8 @@ LinkingTo: Rcpp
 ```
 
 Il est possible d'inclure des informations supplémentaires, par exemple un champ `Encoding` pour
-spécifier la façon dont les éventuelles lettres accentuées sont encodées (`latin1` et `UTF-8` sont les solutions les plus fréquentes). J’insère pour ma part la ligne
+spécifier la façon dont les éventuelles lettres accentuées sont encodées (`latin1` et `UTF-8` sont les solutions les plus fréquentes). 
+J’insère pour ma part la ligne
 ```
 Encoding: UTF-8
 ```
@@ -51,7 +58,7 @@ qui correspond à l’encodage par défaut sous Linux et Mac OS et me permet d'a
 
 Le fichier `NAMESPACE` contient deux lignes importantes pour l'utilisation de fonctions écrites avec Rcpp:
 ```
-useDynLib(milou, .registration=TRUE)
+useDynLib(introRcppPackages, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
 ```
 
@@ -64,95 +71,91 @@ dit à R que toutes les fonctions dont le nom commence par un caractère alphanu
 
 ## Inclure une fonction C++
 
-Les fonctions C++ sont dans le répertoire `src/`. Il contient deux fichiers, `rcpp_hello_world.cpp` qui contient quelques exemples basiques ; et `RcppExports.cpp`,
+Les fonctions C++ sont dans le répertoire `src/`. 
+Il contient deux fichiers, `rcpp_hello_world.cpp` qui contient quelques exemples basiques ; et `RcppExports.cpp`,
 qui est généré par la fonction `Rcpp::compileAttributes()`. Dans un premier temps vous
 pouvez ignorer son contenu.
 
-Créons un fichier `count_zeros.cpp`, contenant 
-```{Rcpp eval=FALSE}
-#include <Rcpp.h>
-using namespace Rcpp;
-
-//[[Rcpp::export]]
-int count_zeroes(IntegerVector x) {
-  int re = 0;
-  for(auto a : x)
-    if(a == 0) ++re;
-  return re;
-}
-```
-Le nom du fichier n'a pas besoin de coincider avec celui de la fonction, c'est juste plus commode pour s'y retrouver. Vous avez remarqué que nous utilisons du C++11. Pour que la compilation du package soit possible, il faut inclure dans `src/` un fichier `Makevars` contenant
-```
-PKG_CXXFLAGS = -std=c++11
+Créons un fichier `squareRoot.cpp`, contenant 
+```{R echo = FALSE, results = "asis"}
+include.cpp('squareRoot.cpp', FALSE)
 ```
 
-Vous pouvez maintenant cliquer sur `Install and Restart` (sous l’onglet `Build`). Rstudio compile le package et relance la session R, puis charge le package. Vous pouvez tester la fonction `count_zeroes` !
+Le nom du fichier n'a pas besoin de coincider avec celui de la fonction, c'est juste plus commode pour s'y retrouver. 
+Vous pouvez maintenant cliquer sur `Install and Restart` (sous l’onglet `Build`). Rstudio compile le package et relance la session R, puis charge le package. Vous pouvez tester la fonction `squareRoot` !
 
 ```{r cache = TRUE}
-library(milou)
-x <-  sample(0:10,1000,TRUE) 
-count_zeroes(x)
+library(introRcppPackages)
+squareRoot(123)
 ```
+
 ## Ce que Rstudio a fait avant la compilation
 
-Rstudio a appelé la fonction `Rcpp::compileAttributes` qui a modifié le fichier `RcppExports.cpp`. Elle a créé cette fonction
+Rstudio a appelé la fonction `Rcpp::compileAttributes()` qui a modifié le fichier `RcppExports.cpp`. Elle a créé cette fonction
+
 ```{Rcpp eval = FALSE}
-RcppExport SEXP _milou_count_zeroes(SEXP xSEXP) {
+RcppExport SEXP _introRcppPackages_squareRoot(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(count_zeroes(x));
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(squareRoot(x));
     return rcpp_result_gen;
 END_RCPP
 }
 ```
+
 qui est en fait celle qui est appelée par R. Comment cela ? La fonction R qui correspond est dans le fichier `R/RcppExports.R`:
 ```{R eval = FALSE}
-count_zeroes <- function(x) {
-    .Call(`_milou_count_zeroes`, x)
+squareRoot <- function(x) {
+    .Call(`_introRcppPackages_squareRoot`, x)
 }
 ```
 
 ## Inclure une fonction R
 
-La fonction `count_zeroes` n'est pas totalement satisfaisante. Une bonne idée serait de 
-vérifier -- dans le code R -- que l'utilisateur a bien passé un vecteur d'entiers. On peut
-créer dans le répertoire `R/` un fichier qu'on appelera par exemple `n_zero.r` et qui contient
+La fonction `squareRoot` n'est pas totalement satisfaisante. Une bonne idée serait de 
+vérifier -- dans le code R -- que l'utilisateur a bien passé un unique élément de type double. On peut
+créer dans le répertoire `R/` un fichier qu'on appelera par exemple `square.root.r` et qui contient
 
 ```{r eval = FALSE}
-n.zero <- function(x) {
-  if( typeof(x) != "integer" )
-    stop("Cette fonction compte les zéros dans les vecteurs d'entiers")
-  count_zeroes(x)
-}
-```
-
-Une définition alternative peut éviter l'appel à `count_zeroes` qui n’est qu’un \og wrapper\fg\ pour un appel à `.Call`:
-```{r eval = FALSE}
-n.zero <- function(x) {
-  if( typeof(x) != "integer" )
-    stop("Cette fonction compte les zéros dans les vecteurs d'entiers")
-  .Call(`_milou_count_zeroes`, x)
+square.root <- function(x) {
+  if( typeof(x) != "double" )
+    stop("This function works on doubles")
+  if( length(x) != 1 )
+    stop("This function works on single numbers")
+  squareRoot(x)
 }
 ```
 
 ## Contrôler quelles sont les fonctions exportées
 
-Puisqu'on a créé `n.zero`, on ne veut pas que l'utilisateur puisse utiliser `count_zeroes`. On va donc modifier notre `NAMESPACE` pour qu'il contienne 
+Puisqu'on a créé `square.root`, on ne veut pas que l'utilisateur puisse utiliser `squareRoot`. 
+On va donc modifier notre `NAMESPACE` pour qu'il contienne 
 ```
-useDynLib(milou, .registration=TRUE)
+useDynLib(introRcppPackages, .registration=TRUE)
 importFrom(Rcpp,evalCpp)
-export(n.zero)
+export(square.root)
 ```
 
-Ainsi la seule fonction exportée par notre package est `n.zero`. On peut toujours, à nos risques et périls, utiliser la fonction non exportée avec la syntaxe `milou:::count_zeroes` (notez le triple deux-points).
+Ainsi la seule fonction exportée par notre package est `square.root`. On peut toujours, à nos risques et périls, 
+utiliser la fonction non exportée avec la syntaxe `introRcppPackages:::squareRoot` (notez le triple deux-points).
 
 ## Documenter les fonctions avec `roxygen2`
 
-Les fichiers de documentation sont inclus dans le répertoire `man/`. Ce sont des fichiers en `.Rd` qui peuvent être écrits à la main ; une solution qui s'avère à l'usage très commode (facilité d’écriture d’une part, de maintenance du package d’autre part) est de les faire générer par `roxygen2`. Pour cela il faut tout d'abord installer ce package : `install.packages("roxygen2")`. Il est possible que l’installation soit pénible car ce package dépend de `xml2` qui nécessite d’installer d’autres composantes logicielles sur le système. Soyez attentifs aux messages d'erreur, ils sont informatifs. Une solution simple sous un linux de type Ubuntu est d'utiliser le gestionnaire de paquets pour installer `r-cran-xml2` ou `r-cran-roxygen2` !
+Les fichiers de documentation sont inclus dans le répertoire `man/`. Ce sont des fichiers en `.Rd`
+qui peuvent être écrits à la main ; une solution qui s'avère à l'usage très commode (facilité
+d’écriture d’une part, de maintenance du package d’autre part) est de les faire générer par
+`roxygen2`. 
 
-Pour documenter la fonction `n.zero`, placez le curseur dans cette fonction puis cliquez sur la baguette magique et choisissez `Insert Roxygen Skeleton`. Votre fichier ressemble maintenant à ceci:
+Pour cela il faut tout d'abord installer ce package : `install.packages("roxygen2")`. Il
+est possible que l’installation soit pénible car ce package dépend de `xml2` qui nécessite
+d’installer d’autres composantes logicielles sur le système. Soyez attentifs aux messages d'erreur,
+ils sont informatifs. Une solution simple sous un linux de type Ubuntu est d'utiliser le
+gestionnaire de paquets pour installer `r-cran-xml2` ou `r-cran-roxygen2` !
+
+Pour documenter la fonction `square.root`, placez le curseur dans cette fonction puis cliquez sur la
+baguette magique et choisissez `Insert Roxygen Skeleton`. Votre fichier ressemble maintenant à ceci:
 
 ```{r eval = FALSE}
 #' Title
@@ -163,181 +166,80 @@ Pour documenter la fonction `n.zero`, placez le curseur dans cette fonction puis
 #' @export
 #'
 #' @examples
-n.zero <- function(x) {
-  if( typeof(x) != "integer" )
-    stop("Cette fonction compte les zéros dans les vecteurs d'entiers")
-  .Call(`_milou_count_zeroes`, x)
+square.root <- function(x) {
+  if( typeof(x) != "double" )
+    stop("This function works on doubles")
+  if( length(x) != 1 )
+    stop("This function works on single numbers")
+  squareRoot(x)
 }
 ```
 
 On va compléter cette ébauche ainsi:
 ```{r eval = FALSE}
-#' Compter les zéros
+#' Computes a square root
 #'
-#' @param x un vecteur de type 'integer'
+#' @param x a double vector of length 1
 #'
-#' @details Cette fonction démontre l'utilisation d'une boucle C++11
-#' pour compter les zéros dans un vecteur.
+#' @details This function is for pedagogical illustration only. Please use
+#' `base::sqrt` in R or `sqrt` in C++.
 #' 
-#' @return le nombre de 0 dans x
+#' @return The square root of `x`
 #' @export
 #'
 #' @examples
-#' a <- sample(0:99, 1e6, TRUE )
-#' n.zero(a)
+#' square.root(2)
 #' 
 
-n.zero <- function(x) {
-  if( typeof(x) != "integer" )
-    stop("Cette fonction compte les zéros dans les vecteurs d'entiers")
-  .Call(`_milou_count_zeroes`, x)
+square.root <- function(x) {
+  if( typeof(x) != "double" )
+    stop("This function works on doubles")
+  if( length(x) != 1 )
+    stop("This function works on single numbers")
+  squareRoot(x)
 }
 ```
 
-Maintenant, on va faire générer à Rstudio le fichier `man/n.zero.Rd` qui correspond.
-Pour cela, il faut d'abord aller dans l'onglet `Build`, puis cliquer sur `More`, `Configure Build Tools`, cocher la case `Generate documentation with Roxygen` (cocher au minimum la case `Rd files`).
+Maintenant, on va faire générer à Rstudio le fichier `man/square.root.Rd` qui correspond.  Pour
+cela, il faut d'abord aller dans l'onglet `Build`, puis cliquer sur `More`, `Configure Build Tools`,
+cocher la case `Generate documentation with Roxygen` (cocher au minimum la case `Rd files`).
 
-Ensuite, cliquez sur `Build > More > Document` pour faire générer ce fichier. Comme notre page d'aide contient des lettres accentuées, cela ne fonctionnera que si vous avez inséré dans `DESCRIPTION` la ligne `Encoding: UTF-8`. Le message d'erreur en l’absence de ce champ n’est pas très instructif, l'information se trouve dans un des warnings qui suit. En pratique, la documentation est généralement écrite en anglais, et les lettres accentuées y sont presque toujours absentes. 
+Ensuite, cliquez sur `Build > More > Document` pour faire générer ce fichier. Comme notre page
+d'aide contient des lettres accentuées, cela ne fonctionnera que si vous avez inséré dans
+`DESCRIPTION` la ligne `Encoding: UTF-8`. Le message d'erreur en l’absence de ce champ n’est pas
+très instructif, l'information se trouve dans un des warnings qui suit. En pratique, la
+documentation est généralement écrite en anglais, et les lettres accentuées y sont presque toujours
+absentes. 
 
-Une fois la documentation générée (regardez le contenu de `man/n.zero.Rd`) vous pouvez réinstaller le package et admirer la page de documentation en tapant `?n.zero` et `example(n.zero)`.
+Une fois la documentation générée (regardez le contenu de `man/square.root.Rd`) vous pouvez
+réinstaller le package et admirer la page de documentation en tapant `?square.root` et
+`example(square.root)`.
 
-![Documentation de la fonction `n.zero`](manuel_n_zero.png)
+![Documentation de la fonction `square.root`](manuel_square_root.png)
 
 ## Générer le fichier `NAMESPACE` avec `roxygen2`
 
-Le tag `@export` de `roxygen2` signale que cette fonction est exportée. Cela permet à `roxygen2` de générer, en plus de l'aide, le fichier `NAMESPACE` et nous évite d'insérer à la main des lignes d'exportation comme `export(n.zero)`. Cependant `roxygen2` refuse (sagement) d'effacer un `NAMESPACE` qu'il n'a pas généré lui-même.
+Le tag `@export` de `roxygen2` signale que cette fonction est exportée. Cela permet à `roxygen2` de
+générer, en plus de l'aide, le fichier `NAMESPACE` et nous évite d'insérer à la main des lignes
+d'exportation comme `export(square.root)`. Cependant `roxygen2` refuse (sagement) d'effacer un
+`NAMESPACE` qu'il n'a pas généré lui-même.
 
-Pour y remédier je n'ai pas trouvé de meilleure solution que d'insérer au début du fichier `NAMESPACE` la ligne suivante, qui permet à `roxygen2` de considérer que le `NAMESPACE` peut être effacé:
+Pour y remédier  il semble qu'il n'y ait pas de meilleure solution que d'insérer au début du fichier
+`NAMESPACE` la ligne suivante, qui permet à `roxygen2` de considérer que le `NAMESPACE` peut être
+effacé: 
 ```
-# Generated by roxygen2: do not edit by hand
+# Generated by roxygen2
 ```
-Il existe sûrement une solution plus propre. Un problème subsiste cependant: `roxygen2` ne génère pas les deux lignes indispensables au fonctionnement d'un package avec `Rcpp`, que nous avons mentionnées plus haut. La solution est d'insérer dans le répertoire `R/` un fichier à cette fin. Nous l'appellerons par exemple `zzz.r` et il contiendra les lignes suivantes:
+Il existe sûrement une solution plus propre. Un problème subsiste cependant: `roxygen2` ne génère
+pas les deux lignes indispensables au fonctionnement d'un package avec `Rcpp`, que nous avons
+mentionnées plus haut. La solution est d'insérer dans le répertoire `R/` un fichier à cette fin.
+Nous l'appellerons par exemple `zzz.r` et il contiendra les lignes suivantes: 
 ```{r}
-#' @useDynLib milou, .registration=TRUE
+#' @useDynLib introRcppPackages, .registration=TRUE
 #' @importFrom Rcpp evalCpp
 NULL
 ```
-Le `NULL` final peut être remplacé par un `0` ou ce que vous voulez (des appels aux fonctions `.onLoad` et `.onAttach` par exemple), mais il faut qu'il y ait un objet R à évaluer sinon le fichier n'est pas pris en compte par `roxygen2`.
-
-## Compilation multifichier
-
-Avoir un fichier par fonction est une bonne pratique. Si une fonction a besoin d'appeler une fonction définie dans un autre fichier, la bonne solution est d'utiliser des fichiers de header `.h` appelés par une directive `#include`. Les templates vont également dans des fichiers `.h`. Nous allons ajouter au package `milou` quelques fichiers pour illustrer ceci.
-
-Dans le dossier `src/` ajoutons un fichier de template `split.h`:
-
-```{Rcpp eval = FALSE}
-#ifndef _milou_split_
-#define _milou_split_
-
-#include <vector>
-#include <utility>
-
-template<typename T1, typename T2>
-std::pair< std::vector<T2>, std::vector<T2> > split(T1 x, T2 a0) {
-  std::vector<T2> lo;
-  std::vector<T2> hi;
-  for(auto & a : x)
-    if(a < a0) 
-      lo.push_back(a);
-    else 
-      hi.push_back(a);
-  return std::make_pair(lo,hi);
-}
-
-#endif
-```
-Notez le mécanisme à base de `#define`, qui permet d’éviter de potentiels problèmes d'inclusions multiples.
-Définissons deux fonctions qui utilisent ce template dans `splitR.cpp`:
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-#include "split.h"
-using namespace Rcpp;
-
-//[[Rcpp::export]]
-List splitR_double(NumericVector x, double pivot) {
-  auto re = split(x, pivot);
-  List L;
-  L["lo"] = wrap(std::get<0>(re));
-  L["hi"] = wrap(std::get<1>(re));
-  return L;
-}
-
-//[[Rcpp::export]]
-List splitR_int(IntegerVector x, int pivot) {
-  auto re = split(x, pivot);
-  List L;
-  L["lo"] = wrap(std::get<0>(re));
-  L["hi"] = wrap(std::get<1>(re));
-  return L;
-}
-```
-
-Le fichier `splitR.h` va contenir uniquement la déclaration de ces fonctions:
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-
-Rcpp::List splitR_double(Rcpp::NumericVector x, double pivot);
-Rcpp::List splitR_int(Rcpp::IntegerVector x, int pivot);
-```
-
-Enfin, le fichier `random_split.cpp` contient deux définitions de fonctions à exporter:
-```{Rcpp eval = FALSE}
-#include <Rcpp.h>
-#include "splitR.h"
-using namespace Rcpp;
-
-// [[Rcpp::export]]
-List random_split_double(NumericVector x) {
-  return splitR_double(x, sample(x, 1)[0] );
-}
-
-// [[Rcpp::export]]
-List random_split_int(IntegerVector x) {
-  return splitR_int(x, sample(x, 1)[0] );
-```
-Sa compilation (qui crée le fichier `random_split.o`) est rendue possible par l'inclusion de `splitR.h` qui informe le compilateur de l'existence de `splitR_double` et `splitR_int`, et du type de leurs arguments. 
-C'est lors de la phase finale de la compilation (création du fichier `milou.so`) que le lien avec les fonctions compilées dans `splitR.o` est réalisé.
-
-Pour utiliser ces fonctions ajoutons dans `R/` le fichier `split.r`:
-```{r eval = FALSE}
-#' Fonction split
-#'
-#' @param x un vecteur d'entiers ou de doubles
-#' @param pivot (facultatif) un pivot
-#' 
-#' @details si `pivot` est absent, 
-#' un élement de `x` pris au hasard sera utilisé
-#' 
-#' @return une liste avec composantes `lo` et `hi` 
-#' @export
-#'
-#' @examples
-#' x <- runif(20)
-#' split(x, 0.5)
-#' 
-#' x <- sample.int(100, 20)
-#' split(x, 50)
-#' split(x)
-split <- function(x, pivot) {
-  if(is.integer(x))
-    if(missing(pivot))
-      .Call(`_milou_random_split_int`, x)
-    else
-      .Call(`_milou_splitR_int`, x, pivot)
-  else if(is.double(x))
-    if(missing(pivot))
-      .Call(`_milou_random_split_double`, x)
-    else
-      .Call(`_milou_splitR_double`, x, pivot)
-  else
-    stop("Mauvais type de x")
-}
-```
-
-N'oublions pas de lancer la documentation avec roxygen2 pour que le NAMESPACE soit mis à jour.
-
-```{r}
-require(milou)
-example(split)
-```
+Le `NULL` final peut être remplacé par un `0` ou ce que vous voulez (des appels aux fonctions
+`.onLoad` et `.onAttach` par exemple), mais il faut qu'il y ait un objet R à évaluer sinon le
+fichier n'est pas pris en compte par `roxygen2`.
 

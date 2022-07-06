@@ -448,12 +448,12 @@ par l'algorithme de Newton. L'avantage de la syntaxe `do while` est apparent
 ici.
 
 ```{R echo = FALSE, results = "asis"}
-include.cpp('racine_carree.cpp')
+include.cpp('squareRoot.cpp')
 ```
 
 ```{r prompt = TRUE, comment = NA}
-racine_carree(2)
-racine_carree(2, 1e-8)
+squareRoot(2)
+squareRoot(2, 1e-8)
 ```
 
 Cherchez sur le site `cpprefrence.com` la description des fonctions `abs` et `fabs`. Pourquoi

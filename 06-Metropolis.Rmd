@@ -1,4 +1,19 @@
+```{R echo = FALSE, warnings = FALSE}
+source("include.cpp.r")
+includeCppPath <- "../introRcppMetropolis/src//"
+```
 # Exemple : Metropolis-Hastings
+
+Install with
+
+```{R eval = FALSE, prompt = TRUE}
+devtools::install_github("introRcpp/introRcppSugar")
+```
+
+Load with
+```{R}
+library(introRcppMetropolis)
+```
 
 ## L'algorithme 
 
@@ -141,34 +156,12 @@ hist(X[,1], breaks = 100, xlim= c(-4,4), freq=FALSE, main = "densité marginale 
 
 Une version obtenue en « traduisant » l'implémentation en R.
 
-```{Rcpp}
-double Pi(double x1, double x2) {
-  return pow((1 + x1*x1 + x1*x2 + x2*x2),-3.0);
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('Pi.cpp')
 ```
 
-```{Rcpp}
-#include <Rcpp.h>
-#include "Pi.h"
-using namespace Rcpp;
-//[[Rcpp::export]]
-NumericMatrix MHcpp1(int B, double sd) {
-  NumericMatrix R(B, 2);
-  double x1 = 0.0, x2 = 0.0;
-  for(int b = 1; b < B; b++) {
-    double y1 = x1 + R::rnorm(0,sd);
-    double y2 = x2 + R::rnorm(0,sd);
-    double rho = Pi(y1, y2) / Pi(x1, x2);
-    double u = R::unif_rand();
-    if(u < rho) {
-      x1 = y1;
-      x2 = y2;
-    }
-    R(b,0) = x1;
-    R(b,1) = x2;
-  }
-  return R;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('MHcpp1.cpp')
 ```
 
 ## Une version améliorée
@@ -176,38 +169,8 @@ NumericMatrix MHcpp1(int B, double sd) {
 Il est souhaitable d'éviter de recalculer `Pi(x1, x2)` à
 chaque tour de boucle, alors que cette valeur est déjà connue.
 
-```{Rcpp}
-#include <Rcpp.h>
-#include "Pi.h"
-using namespace Rcpp;
-
-//[[Rcpp::export]]
-NumericMatrix MHcpp2(int B, double sd, int burn = 0, int thin = 1) {
-  NumericMatrix R(B, 2);
-  thin = (thin < 1)?1:thin;
-  double x1 = 0.0, x2 = 0.0;
-  int b = 1;
-  double pi_x = Pi(x1, x2);
-  for(int k = 0; b < B ; k++) { // !! boucle exotique !!
-    double y1 = x1 + R::rnorm(0,sd);
-    double y2 = x2 + R::rnorm(0,sd);
-    double pi_y = Pi(y1, y2) / Pi(x1, x2);
-    double u = R::unif_rand();
-    if(u * pi_x < pi_y) {
-      x1 = y1;
-      x2 = y2;
-      pi_x = pi_y;
-    }
-    if(k > burn && (k % thin) == 0) {
-      R(b,0) = x1;
-      R(b,1) = x2;
-      b++;
-    }
-    if((k % 1000) == 0) // toutes les mille itérations
-      checkUserInterrupt();
-  }
-  return R;
-}
+```{R echo = FALSE, results = "asis"}
+include.cpp('MHcpp2.cpp')
 ```
 
 Le paramètre `burn` permet de ne pas retenir les premières itérations ;
@@ -222,4 +185,3 @@ On n'appelle pas cette fonction à chaque tour de boucle car elle est longue
 À noter également : une boucle exotique, puisque la condition d'arrêt
 n'est pas sur le compteur de boucle `k`, mais sur `b`, qui est régulièrement
 incrémenté dans la boucle (mais, en général, pas à chaque tour).
-
