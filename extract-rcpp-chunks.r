@@ -55,13 +55,13 @@ extract.rcpp.chunks <- function(filename, newfile, output.dir = "src/", overwrit
 }
 
 get.chunk.name <- function(chunk) {
-  m <- regexec("^\\w+[[:blank:]+](\\w+)\\(", chunk)
+  m <- regexec("^(\\w|:)+.*[[:blank:]+](\\w+)\\(", chunk)
   m <- regmatches(chunk, m)
   m <- m[ sapply(m, length) > 0 ]
   if(length(m) == 0)
     ""
   else
-    m[[1]][2]
+    m[[1]][3]
 }
 
 save.chunk <- function(chunk, filename, overwrite = FALSE) {
