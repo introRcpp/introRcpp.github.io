@@ -141,6 +141,16 @@ export(square.root)
 Ainsi la seule fonction exportée par notre package est `square.root`. On peut toujours, à nos risques et périls, 
 utiliser la fonction non exportée avec la syntaxe `introRcppPackages:::squareRoot` (notez le triple deux-points).
 
+## Paramétrer la compilation
+
+On peut inclure dans `src/` un fichier `Makevars` qui permet notamment de préciser quels flags 
+doivent être inclus dans la commande de compilation. Si on utilise du C++11, il faut notamment
+inclure une ligne 
+```
+PKG_CXXFLAGS = -std=c++11
+```
+sinon la compilation ne sera pas possible.
+
 ## Documenter les fonctions avec `roxygen2`
 
 Les fichiers de documentation sont inclus dans le répertoire `man/`. Ce sont des fichiers en `.Rd`

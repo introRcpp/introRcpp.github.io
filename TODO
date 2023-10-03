@@ -1,8 +1,1 @@
-ce passage a disparu du chapitre "packages"
-
-Pour que la compilation du package soit possible, il faut inclure dans `src/` un fichier `Makevars` contenant
-```
-PKG_CXXFLAGS = -std=c++11
-```
-
-+ toute la compilation multifichier
+Il n'y a rien sur la compilation multifichier dans le chapitre "Packages"... voir à la fin de la version "milou"
