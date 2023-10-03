@@ -6,7 +6,7 @@ source("include.cpp.r")
 includeCppPath <- "../introRcppBases/src/"
 library(introRcppBases)
 ```
-# Introducting C++
+# Introducing C++
 
 Types (integer, floats, bool), arrays, and flow control statements.
 
