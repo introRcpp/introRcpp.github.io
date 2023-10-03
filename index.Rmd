@@ -101,7 +101,6 @@ le plus court et plus amène `A tour of C++` du même auteur.
 
 
 
----
 #```{r child=c("01-intro.Rmd", "02-bases.Rmd", "03-manipuler.Rmd", "04-sucre.Rmd"), }
 #```
 #
@@ -110,5 +109,4 @@ le plus court et plus amène `A tour of C++` du même auteur.
 #
 #```{r child=c("08-packages.Rmd", "09-strings.Rmd")}
 #```
----
 
