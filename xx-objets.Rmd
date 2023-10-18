@@ -1,0 +1,86 @@
+```{R echo = FALSE, warnings = FALSE}
+source("include.cpp.r")
+includeCppPath <- "../introRcppObjets/src/"
+```
+
+# Créer des objets
+
+All the examples are in the R package...
+Install it with
+
+```{R eval = FALSE, prompt = TRUE}
+devtools::install_github("introRcpp/introRcppObjets")
+```
+
+Load it with
+```{R}
+library(introRcppObjets)
+```
+
+## Une classe bavarde : le dodo
+
+### Déclaration de la classe
+
+Le fichier `dodo.h` est dans `inst/include/introRcppObjets/` (voir aussi le `src/Makevars`)
+
+```{R echo = FALSE, results = "asis"}
+includeCppPath <- "../introRcppObjets/inst/include/introRcppObjets/"
+include.cpp("dodo.h")
+includeCppPath <- "../introRcppObjets/src/"
+```
+
+### Construction et destruction
+
+
+```{R echo = FALSE, results = "asis"}
+include.cpp("dodo_construit_detruit.cpp")
+```
+
+Voyons ce que ça donne:
+```{R}
+dodo_construit_detruit()
+```
+
+### Copie et move...
+
+blabla
+
+### Création de vecteur 
+
+blabla
+
+### Passer un objet à R !
+
+Il faut éviter la destruction de l'objet quand il sort du scope.
+
+```{R echo = FALSE, results = "asis"}
+include.cpp("RcppDodo.cpp")
+```
+
+La fonction `mkDodo1` renvoie bien un pointeur mais l'objet est détruit. Utiliser le pointeur créerait une catastrophe !
+
+```{R}
+a <- mkDodo1(12, 14)
+a
+# surtout ne pas exécuter cette ligne
+# printDodo1(a)
+```
+
+La solution est :
+```{R}
+a <- mkDodo2(12, 14)
+a
+printDodo1(a)
+printDodo2(a)
+```
+
+La classe `XPtr` a été construite de façon à ce que quand un pointeur externe est détruit, le
+destructeur de l'objet pointé est appelé. En pratique, ici, quand on efface `a`, le destructeur 
+du dodo est appelé -- pas forcément immédiatement, il faut appeler
+le garbage collecteur, qui sinon passe de lui-même régulièrement.
+
+```{R}
+rm(a)
+gc()   # appel du garbage collector
+```
+

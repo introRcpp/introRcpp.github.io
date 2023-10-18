@@ -102,14 +102,7 @@ le plus court et plus amène `A tour of C++` du même auteur.
 ```{r child="07-moreCpp.Rmd"}
 ```
 
+```{r child="xx-objets.Rmd"}
+```
 
-
-#```{r child=c("01-intro.Rmd", "02-bases.Rmd", "03-manipuler.Rmd", "04-sucre.Rmd"), }
-#```
-#
-#```{r child=c("05-Metropolis.Rmd", "06-moreCpp.Rmd", "07-stdlib.Rmd")}
-#```
-#
-#```{r child=c("08-packages.Rmd", "09-strings.Rmd")}
-#```
 
