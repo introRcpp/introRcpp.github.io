@@ -234,6 +234,7 @@ de la fonctions `addition_int` et `addition_double` ce template sera instancié
 avec `TYPE = int` puis avec `TYPE = double`.
 
 ```{R echo = FALSE, results = "asis"}
+include.cpp('d2.h')
 include.cpp('exampleTemplate.cpp')
 ```
 

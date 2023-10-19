@@ -7,7 +7,7 @@ includeCppPath <- "../introRcppMetropolis/src//"
 Install with
 
 ```{R eval = FALSE, prompt = TRUE}
-devtools::install_github("introRcpp/introRcppSugar")
+devtools::install_github("introRcpp/introRcppMetropolis")
 ```
 
 Load with
@@ -109,9 +109,9 @@ n'est pas très gênant.
 
 L'opération, souvent nécessaire, 
 qui consiste à supprimer les premières valeurs (par exemple les 4000 premières)
-s'appelle le \textit{burn-in}.
+s'appelle le *burn-in*.
 Si il est important que les valeurs échantillonnées soient indépendantes, on peut s'en approcher en ne gardant, 
-par exemple, qu'une valeur toutes les 100 itérations. Cette opération s'appelle le \textit{thinning}.
+par exemple, qu'une valeur toutes les 100 itérations. Cette opération s'appelle le *thinning*.
 
 
 ### Application

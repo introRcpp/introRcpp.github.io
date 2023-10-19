@@ -11,7 +11,7 @@
 
 <meta name="author" content="Hervé Perdry" />
 
-<meta name="date" content="2023-10-18" />
+<meta name="date" content="2023-10-19" />
 
 <title>Developping R packages with C++</title>
 
@@ -1518,7 +1518,7 @@ div.tocify {
 <h1 class="title toc-ignore">Developping R packages with C++</h1>
 <h3 class="subtitle">A beginner guide</h3>
 <h4 class="author">Hervé Perdry</h4>
-<h4 class="date">2023-10-18</h4>
+<h4 class="date">2023-10-19</h4>
 
 </div>
 
@@ -1701,30 +1701,30 @@ Levels: L1 L2</code></pre>
 <h2>Pour les apprentis sorciers</h2>
 <p>La fonction interne <code>inspect</code> permet de voir l’adresse où se trouve l’objet, son type (d’abord codé numériquement, par exemple <code>13</code> pour <code>integer</code> puis le nom conventionnel de ce type, <code>INTSXP</code>), et quelques autres informations ; les objets complexes (leurs attributs) sont déroulés.</p>
 <pre class="r"><code>&gt; .Internal(inspect( 1:10 ))
-@55ee4af17bc0 13 INTSXP g0c0 [REF(65535)]  1 : 10 (compact)</code></pre>
+@5581dc07a710 13 INTSXP g0c0 [REF(65535)]  1 : 10 (compact)</code></pre>
 <pre class="r"><code>&gt; .Internal(inspect( c(0.1, 0.2) ))
-@55ee4a3caf48 14 REALSXP g0c2 [] (len=2, tl=0) 0.1,0.2</code></pre>
+@5581dc410168 14 REALSXP g0c2 [] (len=2, tl=0) 0.1,0.2</code></pre>
 <pre class="r"><code>&gt; a &lt;- c(0.1, 0.2)
 &gt; .Internal(inspect( a ))
-@55ee4a3830b8 14 REALSXP g0c2 [REF(2)] (len=2, tl=0) 0.1,0.2</code></pre>
+@5581dc3b1568 14 REALSXP g0c2 [REF(2)] (len=2, tl=0) 0.1,0.2</code></pre>
 <pre class="r"><code>&gt; names(a) &lt;- c(&quot;A&quot;, &quot;B&quot;)
 &gt; .Internal(inspect( M ))
-@55ee4aee7688 13 INTSXP g0c4 [REF(5),ATT] (len=12, tl=0) 2,2,1,3,1,...
+@5581dd00ac08 13 INTSXP g0c4 [REF(5),ATT] (len=12, tl=0) 2,2,1,3,1,...
 ATTRIB:
-  @55ee49ba9cd0 02 LISTSXP g0c0 [REF(1)] 
-    TAG: @55ee457ae140 01 SYMSXP g1c0 [MARK,REF(7807),LCK,gp=0x4000] &quot;dim&quot; (has value)
-    @55ee4b0f2238 13 INTSXP g0c1 [REF(65535)] (len=2, tl=0) 2,6</code></pre>
+  @5581db5a3788 02 LISTSXP g0c0 [REF(1)] 
+    TAG: @5581d7a2c390 01 SYMSXP g1c0 [MARK,REF(7801),LCK,gp=0x4000] &quot;dim&quot; (has value)
+    @5581dc87e318 13 INTSXP g0c1 [REF(65535)] (len=2, tl=0) 2,6</code></pre>
 <pre class="r"><code>&gt; .Internal(inspect( L ))
-@55ee49857198 19 VECSXP g0c2 [MARK,REF(3),ATT] (len=2, tl=0)
-  @55ee49ab9188 14 REALSXP g0c5 [MARK,REF(2)] (len=10, tl=0) 0.705994,0.44282,0.5814,0.403022,0.0897792,...
-  @55ee49dfb2a0 16 STRSXP g0c1 [MARK,REF(4)] (len=1, tl=0)
-    @55ee48533508 09 CHARSXP g1c1 [MARK,REF(1),gp=0x60] [ASCII] [cached] &quot;dada&quot;
+@5581db671028 19 VECSXP g0c2 [MARK,REF(3),ATT] (len=2, tl=0)
+  @5581daee6708 14 REALSXP g0c5 [MARK,REF(2)] (len=10, tl=0) 0.705994,0.44282,0.5814,0.403022,0.0897792,...
+  @5581dbd39210 16 STRSXP g0c1 [MARK,REF(4)] (len=1, tl=0)
+    @5581da326830 09 CHARSXP g1c1 [MARK,REF(1),gp=0x60] [ASCII] [cached] &quot;dada&quot;
 ATTRIB:
-  @55ee46531890 02 LISTSXP g0c0 [MARK,REF(1)] 
-    TAG: @55ee457add50 01 SYMSXP g1c0 [MARK,REF(65535),LCK,gp=0x4000] &quot;names&quot; (has value)
-    @55ee498571d8 16 STRSXP g0c2 [MARK,REF(65535)] (len=2, tl=0)
-      @55ee45a91168 09 CHARSXP g1c1 [MARK,REF(382),gp=0x61] [ASCII] [cached] &quot;a&quot;
-      @55ee45da5af8 09 CHARSXP g1c1 [MARK,REF(151),gp=0x61] [ASCII] [cached] &quot;b&quot;</code></pre>
+  @5581d8598a60 02 LISTSXP g0c0 [MARK,REF(1)] 
+    TAG: @5581d7a2bfa0 01 SYMSXP g1c0 [MARK,REF(65535),LCK,gp=0x4000] &quot;names&quot; (has value)
+    @5581db671068 16 STRSXP g0c2 [MARK,REF(65535)] (len=2, tl=0)
+      @5581d7d0f268 09 CHARSXP g1c1 [MARK,REF(382),gp=0x61] [ASCII] [cached] &quot;a&quot;
+      @5581d8033408 09 CHARSXP g1c1 [MARK,REF(151),gp=0x61] [ASCII] [cached] &quot;b&quot;</code></pre>
 <p>Les plus braves pourront consulter le code de cette fonction, ainsi que tout le code de R, à cette adresse : [<a href="https://github.com/wch/r-source/tree/trunk/src" class="uri">https://github.com/wch/r-source/tree/trunk/src</a>] plus précisément pour <code>inspect</code>, dans <code>src/main/inspect.c</code>…</p>
 <!--
 Le package `pryr` écrit par Hadley Wickham (dont le livre, `Advanced R`, est chaudement
@@ -2552,7 +2552,7 @@ IntegerVector favourites() {
 <pre class="r"><code>&gt; whatever(5, 2L)
 [1] 2 2 2 2 2</code></pre>
 <pre class="r"><code>&gt; uninitialized(5) # sometime 0s, not always
-[1] 1165884128      21998 1166385784      21998 1184442680</code></pre>
+[1] -677197840      21889 -677197840      21889 -585338664</code></pre>
 <pre class="r"><code>&gt; favourites()
 [1] 1 4 8</code></pre>
 <p>Comparons les performances des trois premières fonctions (comme à chaque fois, les résultats peuvent varier d’une architecture à l’autre).</p>
@@ -2985,7 +2985,7 @@ Unit: milliseconds
 <div id="exemple-metropolis-hastings" class="section level1">
 <h1>Exemple : Metropolis-Hastings</h1>
 <p>Install with</p>
-<pre class="r"><code>&gt; devtools::install_github(&quot;introRcpp/introRcppSugar&quot;)</code></pre>
+<pre class="r"><code>&gt; devtools::install_github(&quot;introRcpp/introRcppMetropolis&quot;)</code></pre>
 <p>Load with</p>
 <pre class="r"><code>library(introRcppMetropolis)</code></pre>
 <div id="lalgorithme" class="section level2">
@@ -3032,7 +3032,7 @@ plot(X[,1], X[,2], xlab = expression(x[1]), ylab = expression(x[2]), type = &quo
 <h4>Les propriétés du résultat</h4>
 <p>Si <span class="math inline">\(t\)</span> est assez grand, alors <span class="math inline">\(x_t\)</span> est approximativement de loi de densité <span class="math inline">\(\pi(x)\)</span> (ou proportionnelle à <span class="math inline">\(\pi(x)\)</span>).</p>
 <p>On pourrait donc utiliser cette méthode avec <span class="math inline">\(t = 4000\)</span> (par exemple) pour générer une valeur dans la loi voulue, puis recommencer, etc. C’est très coûteux en temps de calcul ; en fait pour la plupart des applications on peut garder toutes les valeurs au-delà d’une certaine valeur de <span class="math inline">\(t\)</span>. Elles ne sont pas indépendantes mais cela n’est pas très gênant.</p>
-<p>L’opération, souvent nécessaire, qui consiste à supprimer les premières valeurs (par exemple les 4000 premières) s’appelle le . Si il est important que les valeurs échantillonnées soient indépendantes, on peut s’en approcher en ne gardant, par exemple, qu’une valeur toutes les 100 itérations. Cette opération s’appelle le .</p>
+<p>L’opération, souvent nécessaire, qui consiste à supprimer les premières valeurs (par exemple les 4000 premières) s’appelle le <em>burn-in</em>. Si il est important que les valeurs échantillonnées soient indépendantes, on peut s’en approcher en ne gardant, par exemple, qu’une valeur toutes les 100 itérations. Cette opération s’appelle le <em>thinning</em>.</p>
 </div>
 </div>
 <div id="application" class="section level3">
@@ -3159,14 +3159,14 @@ void pointers() {
 } </code></pre>
 <pre class="r"><code>&gt; pointers()
 x = 12
-p = 0x7ffca915a034
+p = 0x7ffe12a51244
 *p = 12
 On ajoute 1 à x
 x = 13
-p = 0x7ffca915a034
+p = 0x7ffe12a51244
 On ajoute 1 à *p
 x = 14
-p = 0x7ffca915a034</code></pre>
+p = 0x7ffe12a51244</code></pre>
 <p>Nous avions déjà rencontré des pointeurs sans le savoir : les tableaux sont des pointeurs ! Plus précisément, si on a déclaré <code>int a[4]</code>, <code>a</code> pointe vers le premier élément du tableau, <code>a+1</code> vers le second, etc.</p>
 <pre class="cpp"><code>// file: arrays.cpp
 #include &lt;Rcpp.h&gt;
@@ -3183,11 +3183,11 @@ void arrays() {
   SHOW(*(a+2));
 } </code></pre>
 <pre class="r"><code>&gt; arrays()
-a = 0x7ffca915a020
+a = 0x7ffe12a51230
 a[0] = 10
 *a = 10
 a[2] = 30
-a+2 = 0x7ffca915a028
+a+2 = 0x7ffe12a51238
 *a+2 = 12
 *(a+2) = 30</code></pre>
 <p>Notez la différence entre <code>a</code> et <code>a+2</code> : la taille des <code>int</code> est prise en compte dans le calcul.</p>
@@ -3243,8 +3243,8 @@ void references() {
 <pre class="r"><code>&gt; references()
 x = 12
 y = 12
-&amp;x = 0x7ffca915a034
-&amp;y = 0x7ffca915a034
+&amp;x = 0x7ffe12a51244
+&amp;y = 0x7ffe12a51244
 On ajoute 1 à x
 x = 13
 y = 13
@@ -3464,6 +3464,14 @@ d2(u,v) = 17</code></pre>
 <div id="fonctions-polymorphes" class="section level3">
 <h3>Fonctions polymorphes</h3>
 <p>L’exemple ci-dessous définit un template <code>d2</code> ; lors de la compilation de la fonctions <code>addition_int</code> et <code>addition_double</code> ce template sera instancié avec <code>TYPE = int</code> puis avec <code>TYPE = double</code>.</p>
+<pre class="cpp"><code>// file: d2.h
+#ifndef _D2_
+#define _D2_
+template&lt;typename TYPE&gt;
+TYPE d2(TYPE a, TYPE b) {
+  return a*a + b*b;
+}
+#endif</code></pre>
 <pre class="cpp"><code>// file: exampleTemplate.cpp
 #include &lt;Rcpp.h&gt;
 #include &quot;d2.h&quot;
@@ -3783,14 +3791,14 @@ void printDodo2(XPtr&lt;dodo&gt; xpDodo) {
 ## On renvoie un pointeur vers x ; mais x sort du scope !
 ## Destruction d&#39;un dodo a = 12, b = 14</code></pre>
 <pre class="r"><code>a
-## &lt;pointer: 0x7ffca9159d50&gt;</code></pre>
+## &lt;pointer: 0x7ffe12a50f60&gt;</code></pre>
 <pre class="r"><code># surtout ne pas exécuter cette ligne
 # printDodo1(a)</code></pre>
 <p>La solution est :</p>
 <pre class="r"><code>a &lt;- mkDodo2(12, 14)
 ## Construction d&#39;un dodo avec dodo(a, b)</code></pre>
 <pre class="r"><code>a
-## &lt;pointer: 0x55ee49d9cdc0&gt;</code></pre>
+## &lt;pointer: 0x5581d7eccb00&gt;</code></pre>
 <pre class="r"><code>printDodo1(a)
 ## Dodo a = 12, b = 14, vec = ()</code></pre>
 <pre class="r"><code>printDodo2(a)
@@ -3800,8 +3808,8 @@ void printDodo2(XPtr&lt;dodo&gt; xpDodo) {
 gc()   # appel du garbage collector
 ## Destruction d&#39;un dodo a = 12, b = 14
 ##           used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells  797999 42.7    1507594 80.6  1211932 64.8
-## Vcells 1456221 11.2    8388608 64.0  3069953 23.5</code></pre>
+## Ncells  795249 42.5    1507412 80.6  1196660 64.0
+## Vcells 1449016 11.1    8388608 64.0  3046429 23.3</code></pre>
 </div>
 </div>
 </div>
